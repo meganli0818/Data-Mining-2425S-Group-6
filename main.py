@@ -7,7 +7,7 @@ def main():
     G = nx.Graph()
 
     try:
-        with open("./ullman_algo/test.txt") as f:
+        with open("./ullman_algo/smalltest.txt") as f:
             graph_data = f.readlines()
     
         for line in graph_data:
@@ -21,18 +21,28 @@ def main():
 
         P = copy.deepcopy(G)
 
-        # remove an arbitrary edge from P
+        # remove an arbitrary edge from P to serve as the subgraph
         first_edge = next(iter(P.edges))
         P.remove_edge(*first_edge)
         print("done with processing graph")
-        # nx.draw(G, with_labels=True, node_color='lightblue', edge_color='gray')
-        # plt.show()
     except FileNotFoundError:
         print("Error: test.txt file not found")
     except Exception as e:
         print(f"An error occurred: {e}")
     
     ullman(G, P)
+
+    plt.figure(1)
+    nx.draw(G, with_labels=True, node_color='lightblue', edge_color='gray')
+    plt.title("Original Graph G")
+    
+    # Create second figure for graph P
+    plt.figure(2)
+    nx.draw(P, with_labels=True, node_color='lightpink', edge_color='gray')
+    plt.title("Subgraph P")
+    
+    plt.show()
+    
 
     
 

@@ -12,6 +12,7 @@ def generate_candidates(freq_subgraphs, size):
                 candidates.add(new_candidate)
     return candidates
 
+# method to prune the candidates
 def prune(candidates, freq_subgraphs):
     pruned_candidates = set()
     for candidate in candidates:

@@ -1,30 +1,37 @@
 import networkx as nx
 
 def node_based_merge(graph1, graph2):
-    placeholder
+     Placeholder
 
-def generate_candidates(freq_subgraphs, size):
+
+def generate_candidates(freq_subgraphs):
+    freq_subgraphs_list = list(freq_subgraphs)
     candidates = set()
-    for i in range(len(freq_subgraphs)):
-        for j in range(i, len(freq_subgraphs)):
+    for i in range(len(freq_subgraphs_list)):
+        for j in range(i, len(freq_subgraphs_list)):
             new_candidate = node_based_merge(freq_subgraphs[i], freq_subgraphs[j])
-            if len(new_candidate.nodes()) == size:
+            if new_candidate:
                 candidates.add(new_candidate)
     return candidates
 
-# method to prune the candidates
+# Check if all k-1 size subgraphs of a k size candidate are frequent.
+def all_subgraphs_frequent(candidate, freq_subgraphs):
+    for node in candidate.nodes():
+        sub_of_candidate = candidate.remove_node(node)
+        for subgraph in freq_subgraphs:
+            # if not is_subgraph(sub_of_candidate, subgraph):
+                return False
+    return True
+
+# Prune candidates based on whether all subgraphs are frequent.
 def prune(candidates, freq_subgraphs):
     pruned_candidates = set()
     for candidate in candidates:
-        all_subgraphs_freq = True
-        for subgraph in freq_subgraphs:
-            ## if not is_subgraph(candidate, subgraph):
-                all_subgraphs_freq = False
-                break
-        if all_subgraphs_freq:
+        if all_subgraphs_frequent(candidate, freq_subgraphs):
             pruned_candidates.add(candidate)
     return pruned_candidates
 
+# Apriori algorithm to find frequent subgraphs in a dataset of graphs.
 def apriori(graph_dataset, min_support):
     freq_subgraphs = set()
     singleton = nx.Graph()
@@ -41,7 +48,7 @@ def apriori(graph_dataset, min_support):
         candidate_supp = {}
         for graph in graph_dataset:
             for candidate in candidates:
-                if is_subgraph(graph, candidate):
+                # if is_subgraph(graph, candidate):
                     if candidate not in candidate_supp:
                         candidate_supp[candidate] = 1
                     else    

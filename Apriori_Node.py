@@ -1,7 +1,27 @@
 import networkx as nx
+import ullman_algo
 
-def node_based_merge(graph1, graph2):
-     Placeholder
+
+def node_based_merge(G, P):
+    for node in P.nodes():
+        P_remove_node = nx.Graph(P.remove_node(node))
+        ullman = ullman_algo.UllmanAlgorithm(G, P_remove_node)
+        if ullman.ullman():
+            unmapped_nodes = ullman.get_unmapped_vertices()
+            mapping = ullman.get_mapping()
+            # Create a new graph by merging G and P
+            merged_graph = nx.Graph(G)
+            removed_node_neighbors = node.neighbors()
+            merged_graph.add_node(node)
+            for neighbor in removed_node_neighbors:
+                merged_graph.add_edge(node, mapping[neighbor])
+            # 1: connect the node we removed from P to the nodes in G corresponding to the isomorphism
+            # 2: return two graphs, one where the vertex is connected to the unmapped vertex, and another where its not
+            merged_graph2 = nx.Graph(merged_graph)
+            for unmapped_node in unmapped_nodes:
+                merged_graph2.add_edge(node, unmapped_node)
+            return [merged_graph, merged_graph2]
+    return None
 
 
 def generate_candidates(freq_subgraphs):
@@ -51,7 +71,7 @@ def apriori(graph_dataset, min_support):
                 # if is_subgraph(graph, candidate):
                     if candidate not in candidate_supp:
                         candidate_supp[candidate] = 1
-                    else    
+                    else:
                         candidate_supp[candidate] += 1
 
         # Filter candidates by min_support
@@ -60,3 +80,5 @@ def apriori(graph_dataset, min_support):
         k += 1
 
     return freq_subgraphs
+
+apriori(set(), 0.5)

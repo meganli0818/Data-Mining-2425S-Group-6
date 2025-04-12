@@ -97,6 +97,15 @@ class UllmanAlgorithm:
             set: Vertices in G not included in the mapping
         """
         return set(self.G_vertices) - set(self.visited.values())
+    
+    def get_mapping(self):
+        """
+        Get the current mapping of vertices from P to G.
+        
+        Returns:
+            dict: Mapping of vertices in P to vertices in G
+        """
+        return self.visited
 
     def ullman(self):
         """

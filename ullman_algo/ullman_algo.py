@@ -86,6 +86,29 @@ class UllmanAlgorithm:
                 if p_degree <= g_degree:
                     candidate_mappings[p_node_to_index.get(p)][g_node_to_index.get(g)] = True
         return candidate_mappings
+    
+    def exact_candidate_mappings(self):
+        """
+        Generate initial candidate mapping matrix based on vertex degrees.
+        
+        A vertex p in P can be mapped to vertex g in G if degree(p) <= degree(g).
+        
+        Returns:
+            numpy.ndarray: Boolean matrix where True indicates a potential mapping
+        """
+        # Create a boolean matrix to represent candidate mappings
+        candidate_mappings = np.zeros((len(self.P_dictionary_by_vertex), len(self.G_dictionary_by_vertex)), dtype=bool)
+
+        # Iterate through the degrees of P and G to find candidate mappings
+        p_node_to_index = {p: i for i, p in enumerate(self.P_dictionary_by_vertex.keys())}
+        g_node_to_index = {g: i for i, g in enumerate(self.G_dictionary_by_vertex.keys())}
+        for p, p_degree in self.P_dictionary_by_vertex.items():
+            for g, g_degree in self.G_dictionaxry_by_vertex.items():
+                # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g
+                if p_degree == g_degree:
+                    candidate_mappings[p_node_to_index.get(p)][g_node_to_index.get(g)] = True
+        return candidate_mappings
+
 
     def get_unmapped_vertices(self):
         """
@@ -105,9 +128,12 @@ class UllmanAlgorithm:
         """
         return self.visited
 
-    def ullman(self):
+    def ullman(self, exact_match):
         """
         Execute Ullman's algorithm to find if P is a subgraph of G.
+
+        Parameters:
+            exact_match (bool): If True, find an exact match (same degree), otherwise find a subgraph match
         
         Returns:
             bool: True if P is a subgraph of G, False otherwise
@@ -115,7 +141,11 @@ class UllmanAlgorithm:
         if len(self.adj_list_P) == 0:
             return True
         first_vertex = next(iter(self.adj_list_P.keys()))
-        return self.recursive_ullman(first_vertex, self.candidate_mappings(), self.visited)
+        if exact_match:
+            candidate_mapping_matrix = self.exact_candidate_mappings()
+        else:
+            candidate_mapping_matrix = self.candidate_mappings()
+        return self.recursive_ullman(first_vertex, candidate_mapping_matrix, self.visited)
 
     def recursive_ullman(self, x, candidate_mapping_matrix, visited):
         """

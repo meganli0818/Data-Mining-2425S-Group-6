@@ -114,6 +114,8 @@ class UllmanAlgorithm:
         Returns:
             bool: True if P is a subgraph of G, False otherwise
         """
+        if len(self.adj_list_P) == 0:
+            return True
         first_vertex = next(iter(self.adj_list_P.keys()))
         return self.recursive_ullman(first_vertex, self.candidate_mappings(), self.visited)
 

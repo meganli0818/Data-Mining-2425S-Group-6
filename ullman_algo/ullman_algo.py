@@ -31,8 +31,6 @@ class UllmanAlgorithm:
         Raises:
             ValueError: If P has more edges or vertices than G
         """
-        if len(P.edges()) > len(G.edges()):
-            raise ValueError("P cannot be larger than G")
         if len(P.nodes()) > len(G.nodes()):
             raise ValueError("P cannot be larger than G")
             

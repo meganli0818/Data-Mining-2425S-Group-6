@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import copy
 from ullman_algo.ullman_algo import UllmanAlgorithm
-from Apriori_Node import node_based_merge
+import Apriori_Node
 
 def main():
     test_apriori()
@@ -71,10 +71,15 @@ def test_apriori():
     graph3 = nx.Graph()
     graph3.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 9)])
 
-    merge23 = node_based_merge(graph2, graph3)
-    print("Merged Graphs:")
-    for merged_graph in merge23:
-        print(merged_graph.edges())
+    singleton = nx.Graph().add_node(1)
+
+    merge23 = Apriori_Node.node_based_merge(graph2, graph3)
+    candidates23 = Apriori_Node.generate_candidates(singleton)
+    #pruned = Apriori_Node.prune(candidates23, [graph2, graph3])
+    apriori = Apriori_Node.apriori([graph1, graph2, graph3], 0.5)
+    print("Apriori Graphs:")
+    for graph in apriori:
+        print(graph.edges())
     
     plt.figure(1)
     nx.draw(graph2, with_labels=True, node_color='lightblue', edge_color='gray')
@@ -84,10 +89,14 @@ def test_apriori():
     nx.draw(graph3, with_labels=True, node_color='lightpink', edge_color='gray')
     plt.title("Graph 3")
 
-    for graph in merge23:
+    plt.figure(3)
+    nx.draw(graph1, with_labels=True, node_color='lightyellow', edge_color='gray')
+    plt.title("Graph 1")
+
+    for graph in apriori:
         plt.figure()
         nx.draw(graph, with_labels=True, node_color='lightgreen', edge_color='gray')
-        plt.title("Merged Graph")
+        plt.title("Candidate Graph")
 
 
     plt.show()

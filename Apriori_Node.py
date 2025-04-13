@@ -1,7 +1,7 @@
 import networkx as nx
 from ullman_algo.ullman_algo import UllmanAlgorithm
 
-# Merges two graphs 
+# Merges two graphs
 def node_based_merge(G, P):
     if len(P.nodes()) != len(G.nodes()):
         return None
@@ -42,18 +42,29 @@ def generate_candidates(freq_subgraphs):
         return None
     freq_subgraphs_list = list(freq_subgraphs)
     candidates = set()
+    # Loop through all pairs of frequent subgraphs, merging them to create new candidates
     for i in range(len(freq_subgraphs_list)):
         for j in range(i, len(freq_subgraphs_list)):
-            new_candidates = node_based_merge(freq_subgraphs[i], freq_subgraphs[j])
+            new_candidates = node_based_merge(freq_subgraphs_list[i], freq_subgraphs_list[j])
             if new_candidates is not None:
-                for candidate in new_candidates:
-                    candidates.add(candidate)
+                for new_candidate in new_candidates:
+                    # Check if the candidate is already generated
+                    candidate_already_generated = False
+                    for existing_candidate in candidates:
+                        if nx.is_isomorphic(new_candidate, existing_candidate):
+                            candidate_already_generated = True
+                            break
+                    # Add candidate if it is not already generated
+                    if not candidate_already_generated:    
+                        candidates.add(new_candidate)
     return candidates
 
 # Check if all k-1 size subgraphs of a k size candidate are frequent.
 def all_subgraphs_frequent(candidate, freq_subgraphs):
+    # Check if all k-1 size subgraphs of the candidate are frequent
     for node in candidate.nodes():
-        sub_of_candidate = candidate.remove_node(node)
+        sub_of_candidate = nx.Graph(candidate)
+        sub_of_candidate.remove_node(node)
         for subgraph in freq_subgraphs:
             ullman = UllmanAlgorithm(subgraph, sub_of_candidate)
             if not ullman.ullman():
@@ -71,27 +82,36 @@ def prune(candidates, freq_subgraphs):
 # Apriori algorithm to find frequent subgraphs in a dataset of graphs.
 def apriori(graph_dataset, min_freq):
     min_support = int(min_freq * len(graph_dataset))
-    freq_subgraphs = set()
+    freq_subgraphs = []
     singleton = nx.Graph()
-    curr_freq_subgraphs = set().add(singleton)
+    singleton.add_node(0)
+    curr_freq_subgraphs = [singleton]
+    for graph in curr_freq_subgraphs:
+        print("Initial frequent subgraphs:", graph.edges())
     candidates = generate_candidates(curr_freq_subgraphs)
+    for graph in candidates:
+        print("Initial candidate:", graph.edges())
     k = 3
 
-    while candidates and candidates.size() > 0:
-        freq_subgraphs.add(curr_freq_subgraphs)
+    while candidates and len(candidates) > 0:
+        for new_freq_subgraph in curr_freq_subgraphs:
+            freq_subgraphs.append(new_freq_subgraph)
+        print("Current frequent subgraphs:", curr_freq_subgraphs)
         curr_freq_subgraphs = candidates
+        print("Current candidates:", candidates)
         candidates = prune(generate_candidates(curr_freq_subgraphs), curr_freq_subgraphs)
 
         # Count support for each candidate
         candidate_supp = {}
         for graph in graph_dataset:
             for candidate in candidates:
-                ullman = ullman_algo.UllmanAlgorithm(graph, candidate)
-                if ullman.ullman():
-                    if candidate not in candidate_supp:
-                        candidate_supp[candidate] = 1
-                    else:
-                        candidate_supp[candidate] += 1
+                if candidate.number_of_nodes() <= graph.number_of_nodes():
+                    ullman = UllmanAlgorithm(graph, candidate)
+                    if ullman.ullman():
+                        if candidate not in candidate_supp:
+                            candidate_supp[candidate] = 1
+                        else:
+                            candidate_supp[candidate] += 1
 
         # Filter candidates by min_support
         candidates = {candidate: supp for candidate, supp in candidate_supp.items() if supp >= min_support}

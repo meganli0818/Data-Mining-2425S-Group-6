@@ -62,24 +62,31 @@ def graph_reader(graph_data):
     return G
 
 def test_apriori():
-    graph1 = nx.Graph()
-    graph1.add_edges_from([(1, 2), (2, 3)])
+    # graph1 = nx.Graph()
+    # graph1.add_edges_from([(1, 2), (2, 3)])
+
+    # graph2 = nx.Graph()
+    # graph2.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 4)])
+
+    # graph3 = nx.Graph()
+    # graph3.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 9), (2, 9)])
 
     graph2 = nx.Graph()
-    graph2.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 4)])
+    graph2.add_edges_from([(1, 2), (2,3), (3,1)])
 
     graph3 = nx.Graph()
-    graph3.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 9)])
+    graph3.add_edges_from([(1, 2), (2,3)])
 
     singleton = nx.Graph().add_node(1)
 
-    merge23 = Apriori_Node.node_based_merge(graph2, graph3)
-    candidates23 = Apriori_Node.generate_candidates(singleton)
+    #merge23 = Apriori_Node.node_based_merge(graph2, graph3)
+    #candidates23 = Apriori_Node.generate_candidates([graph2, graph3])
+    
     #pruned = Apriori_Node.prune(candidates23, [graph2, graph3])
-    apriori = Apriori_Node.apriori([graph1, graph2, graph3], 0.5)
-    print("Apriori Graphs:")
-    for graph in apriori:
-        print(graph.edges())
+    apriori = Apriori_Node.apriori([graph2, graph3], 0.6)
+    # print("Apriori Graphs:")
+    # for graph in apriori:
+    #     print(graph.edges())
     
     plt.figure(1)
     nx.draw(graph2, with_labels=True, node_color='lightblue', edge_color='gray')
@@ -89,9 +96,9 @@ def test_apriori():
     nx.draw(graph3, with_labels=True, node_color='lightpink', edge_color='gray')
     plt.title("Graph 3")
 
-    plt.figure(3)
-    nx.draw(graph1, with_labels=True, node_color='lightyellow', edge_color='gray')
-    plt.title("Graph 1")
+    # plt.figure(3)
+    # nx.draw(graph1, with_labels=True, node_color='lightyellow', edge_color='gray')
+    # plt.title("Graph 1")
 
     for graph in apriori:
         plt.figure()

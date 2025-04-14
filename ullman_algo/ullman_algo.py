@@ -103,7 +103,7 @@ class UllmanAlgorithm:
         p_node_to_index = {p: i for i, p in enumerate(self.P_dictionary_by_vertex.keys())}
         g_node_to_index = {g: i for i, g in enumerate(self.G_dictionary_by_vertex.keys())}
         for p, p_degree in self.P_dictionary_by_vertex.items():
-            for g, g_degree in self.G_dictionaxry_by_vertex.items():
+            for g, g_degree in self.G_dictionary_by_vertex.items():
                 # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g
                 if p_degree == g_degree:
                     candidate_mappings[p_node_to_index.get(p)][g_node_to_index.get(g)] = True
@@ -130,7 +130,7 @@ class UllmanAlgorithm:
 
     def ullman(self, exact_match):
         """
-        Execute Ullman's algorithm to find if P is a subgraph of G.
+        Execute Ullman's algorithm to find if P is a subgraph of G, or if they are isomorphic.
 
         Parameters:
             exact_match (bool): If True, find an exact match (same degree), otherwise find a subgraph match

@@ -1,40 +1,44 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import time
 import copy
 from ullman_algo.ullman_algo import UllmanAlgorithm
 import Apriori_Node
 
 def main():
-    test_apriori()
 
-    G = nx.Graph()
+    try:
+        with open("./ullman_algo/test.txt") as f:
+            graph_data = f.readlines()
 
-    # try:
-    #     with open("./ullman_algo/test.txt") as f:
-    #         graph_data = f.readlines()
-        
-    #     with open("./ullman_algo/Ptest.txt") as f:
-    #         P_data = f.readlines()
-    #     G = graph_reader(graph_data)
+        graphs = graph_reader(graph_data)
 
-    #     P = graph_reader(P_data)
 
-    #     print("done with processing graph")
-    # except FileNotFoundError:
-    #     print("Error: test.txt file not found")
-    # except Exception as e:
-    #     print(f"An error occurred: {e}")
+        print("done with processing graphs")
+    except FileNotFoundError:
+        print("Error: test.txt file not found")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     
-    # try:
-    #     matcher = UllmanAlgorithm(G, P)
-    # except ValueError as e:
-    #     print(f"Error: {e}")
-    # if (matcher.ullman()):
-    #     print("P is a subgraph of G")
-    # else:
-    #     print("P is NOT a subgraph of G")
+    
+    # for graph in graphs:
+    #     display_graph_with_labels(graph, title="Graph", color="lightblue")
+    
+    start_time = time.time()
+    apriori = Apriori_Node.apriori(graphs, 0.7)
+    end_time = time.time()
 
-    # print(matcher.get_unmapped_vertices())
+
+
+    print("Time taken for apriori:", end_time - start_time)
+    print("number of frequent subgraphs:", len(apriori))
+
+    # for graph in apriori:
+    #     display_graph_with_labels(graph, title="Candidate Graph", color="lightgreen")
+
+
+    plt.show()
+    
     
 
     # plt.figure(1)
@@ -48,13 +52,27 @@ def main():
     
     # plt.show()
     
-
 def graph_reader(graph_data):
+    graphs = []
+    G = nx.Graph()
+    for line in graph_data:
+        if line.startswith("t"):
+            graphs.append(G)
+            G = nx.Graph()
+        if line.startswith("v"):
+            _, n, m = line.split()
+            G.add_node(int(n), label=m)
+        elif line.startswith("e"):
+            _, u, v, m2 = line.split()
+            G.add_edge(int(u), int(v))
+    return graphs[1:]
+
+def single_graph_reader(graph_data):
     G = nx.Graph()
     for line in graph_data:
             if line.startswith("v"):
-                _, n, m1 = line.split()
-                G.add_node(int(n))
+                _, n, m = line.split()
+                G.add_node(int(n), label=m)
                 print(n)
             elif line.startswith("e"):
                 _, u, v, m2 = line.split()
@@ -77,13 +95,16 @@ def test_apriori():
     graph3 = nx.Graph()
     graph3.add_edges_from([(1, 2), (2,3)])
 
+    graph4 = nx.Graph()
+    graph4.add_edges_from([(1, 2), (2,3), (3,1), (1,4)])
+
     singleton = nx.Graph().add_node(1)
 
     #merge23 = Apriori_Node.node_based_merge(graph2, graph3)
     #candidates23 = Apriori_Node.generate_candidates([graph2, graph3])
     
     #pruned = Apriori_Node.prune(candidates23, [graph2, graph3])
-    apriori = Apriori_Node.apriori([graph2, graph3], 0.6)
+    apriori = Apriori_Node.apriori([graph2, graph3, graph4], 0.6)
     # print("Apriori Graphs:")
     # for graph in apriori:
     #     print(graph.edges())
@@ -96,9 +117,9 @@ def test_apriori():
     nx.draw(graph3, with_labels=True, node_color='lightpink', edge_color='gray')
     plt.title("Graph 3")
 
-    # plt.figure(3)
-    # nx.draw(graph1, with_labels=True, node_color='lightyellow', edge_color='gray')
-    # plt.title("Graph 1")
+    plt.figure(3)
+    nx.draw(graph4, with_labels=True, node_color='lightyellow', edge_color='gray')
+    plt.title("Graph 1")
 
     for graph in apriori:
         plt.figure()
@@ -107,6 +128,43 @@ def test_apriori():
 
 
     plt.show()
+
+def display_graph_with_labels(G, title=None, color='lightblue'):
+    """
+    Display a graph with node labels.
+    
+    Args:
+        G: NetworkX graph object
+        title: Optional title for the plot
+    """
+    # Create a figure
+    plt.figure(figsize=(8, 6))
+    
+    # Get node positions (layout)
+    pos = nx.spring_layout(G, seed=42)  # Seed for reproducible layout
+    
+    # Get node labels (use node ID if no label attribute)
+    labels = {}
+    for node in G.nodes():
+        if 'label' in G.nodes[node]:
+            labels[node] = f"{node}:{G.nodes[node]['label']}"
+        else:
+            labels[node] = str(node)
+    
+    # Draw the graph
+    nx.draw(G, pos, with_labels=False, node_color=color, 
+            node_size=700, edge_color='gray')
+    
+    # Draw the labels with a slight offset
+    nx.draw_networkx_labels(G, pos, labels=labels, font_size=10)
+    
+    # Add title if provided
+    if title:
+        plt.title(title)
+    
+    # Show the plot
+    plt.axis('off')
+    plt.tight_layout()
 
 if __name__ == "__main__":
     main()

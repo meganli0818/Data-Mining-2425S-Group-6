@@ -184,13 +184,14 @@ def apriori(graph_dataset, min_freq, verbose=None):
             for candidate in candidates:
                 if candidate.number_of_nodes() <= graph.number_of_nodes():
                     ullman = UllmanAlgorithm(graph, candidate)
+                    print(f"\rChecked candidate {inner_counter}/{len(candidates)} with graph {counter}/{len(graph_dataset)}    ", end="")
                     if ullman.ullman(False):
                         if candidate not in candidate_supp:
                             candidate_supp[candidate] = 1
                         else:
                             candidate_supp[candidate] += 1
                 
-                print(f"\rChecked candidate {inner_counter}/{len(candidates)} with graph {counter}/{len(graph_dataset)}", end="")
+                
                 inner_counter += 1
             counter += 1
         

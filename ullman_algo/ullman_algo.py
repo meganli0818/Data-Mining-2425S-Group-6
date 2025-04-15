@@ -42,6 +42,8 @@ class UllmanAlgorithm:
 
         self.G_labels = nx.get_node_attributes(G, 'label')
         self.P_labels = nx.get_node_attributes(P, 'label')
+
+        self.failure_count = 0
         
         # Group G's vertices by degree for efficient matching
         G_dictionary_by_degree = {}
@@ -217,5 +219,9 @@ class UllmanAlgorithm:
                 # Remove mapping if this branch fails (backtrack)
                 del visited[x]
                 
+        # No valid mapping found
+        self.failure_count += 1
+        if self.failure_count%1000 == 0:
+            print(f"\rUllman failures: {self.failure_count}        ", end="")
         return False
 

@@ -145,7 +145,7 @@ class UllmanAlgorithm:
         """
         if len(self.adj_list_P) == 0:
             return True
-        first_vertex = next(iter(self.adj_list_P.keys()))
+        first_vertex = next(iter(sorted(self.adj_list_P.keys())))
         if exact_match:
             candidate_mapping_matrix = self.exact_candidate_mappings()
         else:
@@ -204,7 +204,7 @@ class UllmanAlgorithm:
                 
                 # Choose next vertex to match (prioritize neighbors)
                 if unvisited_neighbors:
-                    next_x = next(iter(unvisited_neighbors))
+                    next_x = next(iter(sorted(unvisited_neighbors)))
                     if self.recursive_ullman(next_x, candidate_copy, visited):
                         return True
                 else:
@@ -212,7 +212,7 @@ class UllmanAlgorithm:
                     leftoverVertices = set(self.adj_list_P.keys()) - set(visited.keys())
                     if not leftoverVertices:  # All vertices matched
                         return True
-                    next_x = next(iter(leftoverVertices))
+                    next_x = next(iter(sorted(leftoverVertices)))
                     if self.recursive_ullman(next_x, candidate_copy, visited):
                         return True
                 

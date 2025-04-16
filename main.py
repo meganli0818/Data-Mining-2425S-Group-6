@@ -12,7 +12,7 @@ def main():
     """
     try:
         # Read graph data from file (change file name to file that contains the dataset)
-        with open("./ullman_algo/test.txt") as f:
+        with open("./test.txt") as f:
             graph_data = f.readlines()
 
         # Convert raw data into NetworkX graph objects

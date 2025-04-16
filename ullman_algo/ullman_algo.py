@@ -87,7 +87,7 @@ class UllmanAlgorithm:
         g_node_to_index = {g: i for i, g in enumerate(self.G_dictionary_by_vertex.keys())}
         for p, p_degree in self.P_dictionary_by_vertex.items():
             for g, g_degree in self.G_dictionary_by_vertex.items():
-                # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g
+                # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g and their labels match
                 if p_degree <= g_degree and self.P_labels[p] == self.G_labels[g]:
                     candidate_mappings[p_node_to_index.get(p)][g_node_to_index.get(g)] = True
         return candidate_mappings
@@ -150,9 +150,9 @@ class UllmanAlgorithm:
             candidate_mapping_matrix = self.exact_candidate_mappings()
         else:
             candidate_mapping_matrix = self.candidate_mappings()
-        return self.recursive_ullman(first_vertex, candidate_mapping_matrix, self.visited)
+        return self.recursive_ullman(first_vertex, candidate_mapping_matrix, self.visited, start=True)
 
-    def recursive_ullman(self, x, candidate_mapping_matrix, visited):
+    def recursive_ullman(self, x, candidate_mapping_matrix, visited, start=False):
         """
         Recursive function to find a mapping from P to G.
         
@@ -218,10 +218,12 @@ class UllmanAlgorithm:
                 
                 # Remove mapping if this branch fails (backtrack)
                 del visited[x]
+                if start:
+                    self.failure_count += 1
+                    if self.failure_count%100 == 0:
+                        print(f"\rUllman failures: {self.failure_count}        ", end="")
                 
         # No valid mapping found
-        self.failure_count += 1
-        if self.failure_count%1000 == 0:
-            print(f"\rUllman failures: {self.failure_count}        ", end="")
+        
         return False
 

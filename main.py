@@ -6,13 +6,17 @@ from ullman_algo.ullman_algo import UllmanAlgorithm
 import Apriori_Node
 
 def main():
-
+    """
+    Main function to load graph data, run the Apriori algorithm, 
+    and display execution statistics.
+    """
     try:
+        # Read graph data from file (change file name to file that contains the dataset)
         with open("./ullman_algo/test.txt") as f:
             graph_data = f.readlines()
 
+        # Convert raw data into NetworkX graph objects
         graphs = graph_reader(graph_data)
-
 
         print("done with processing graphs")
     except FileNotFoundError:
@@ -20,122 +24,78 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
     
-    
-    # for graph in graphs:
-    #     display_graph_with_labels(graph, title="Graph", color="lightblue")
-    
+    # Measure execution time of the Apriori algorithm
     start_time = time.time()
-    apriori = Apriori_Node.apriori(graphs, 0.7)
+    apriori = Apriori_Node.apriori(graphs, 0.8)  # Run with 80% support threshold
     end_time = time.time()
 
+    print("Time taken for apriori in seconds:", end_time - start_time)
+    print("Number of frequent subgraphs:", len(apriori))
 
-
-    print("Time taken for apriori:", end_time - start_time)
-    print("number of frequent subgraphs:", len(apriori))
-
-    # for graph in apriori:
-    #     display_graph_with_labels(graph, title="Candidate Graph", color="lightgreen")
-
-
-    plt.show()
+    plt.show()  # Display any plotted graphs
     
-    
-
-    # plt.figure(1)
-    # nx.draw(G, with_labels=True, node_color='lightblue', edge_color='gray')
-    # plt.title("Original Graph G")
-    
-    # # Create second figure for graph P
-    # plt.figure(2)
-    # nx.draw(P, with_labels=True, node_color='lightpink', edge_color='gray')
-    # plt.title("Subgraph P")
-    
-    # plt.show()
     
 def graph_reader(graph_data):
+    """
+    Parse a text file containing graph data in a specific format
+    and convert it to NetworkX graph objects.
+    
+    Args:
+        graph_data (list): Lines from the graph data file
+        
+    Returns:
+        list: List of NetworkX graph objects
+    """
     graphs = []
     G = nx.Graph()
     for line in graph_data:
         if line.startswith("t"):
+            # 't' indicates a new graph, so add the current graph to the list
+            # and start a new one (skip the first empty graph)
             graphs.append(G)
             G = nx.Graph()
         if line.startswith("v"):
+            # 'v' lines define vertices with labels: v [node_id] [label]
             _, n, m = line.split()
             G.add_node(int(n), label=m)
         elif line.startswith("e"):
+            # 'e' lines define edges: e [source] [target] [label]
             _, u, v, m2 = line.split()
             G.add_edge(int(u), int(v))
-    return graphs[1:]
+    return graphs[1:]  # Skip the first empty graph
 
 def single_graph_reader(graph_data):
+    """
+    Parse a text file containing a single graph data in the same format.
+    
+    Args:
+        graph_data (list): Lines from the graph data file
+        
+    Returns:
+        nx.Graph: A single NetworkX graph object
+    """
     G = nx.Graph()
     for line in graph_data:
             if line.startswith("v"):
+                # Add vertices with labels
                 _, n, m = line.split()
                 G.add_node(int(n), label=m)
                 print(n)
             elif line.startswith("e"):
+                # Add edges
                 _, u, v, m2 = line.split()
                 G.add_edge(int(u), int(v))
     return G
 
-def test_apriori():
-    # graph1 = nx.Graph()
-    # graph1.add_edges_from([(1, 2), (2, 3)])
-
-    # graph2 = nx.Graph()
-    # graph2.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 4)])
-
-    # graph3 = nx.Graph()
-    # graph3.add_edges_from([(1, 2), (2, 3), (3, 1), (1, 9), (2, 9)])
-
-    graph2 = nx.Graph()
-    graph2.add_edges_from([(1, 2), (2,3), (3,1)])
-
-    graph3 = nx.Graph()
-    graph3.add_edges_from([(1, 2), (2,3)])
-
-    graph4 = nx.Graph()
-    graph4.add_edges_from([(1, 2), (2,3), (3,1), (1,4)])
-
-    singleton = nx.Graph().add_node(1)
-
-    #merge23 = Apriori_Node.node_based_merge(graph2, graph3)
-    #candidates23 = Apriori_Node.generate_candidates([graph2, graph3])
-    
-    #pruned = Apriori_Node.prune(candidates23, [graph2, graph3])
-    apriori = Apriori_Node.apriori([graph2, graph3, graph4], 0.6)
-    # print("Apriori Graphs:")
-    # for graph in apriori:
-    #     print(graph.edges())
-    
-    plt.figure(1)
-    nx.draw(graph2, with_labels=True, node_color='lightblue', edge_color='gray')
-    plt.title("Graph 2")
-
-    plt.figure(2)
-    nx.draw(graph3, with_labels=True, node_color='lightpink', edge_color='gray')
-    plt.title("Graph 3")
-
-    plt.figure(3)
-    nx.draw(graph4, with_labels=True, node_color='lightyellow', edge_color='gray')
-    plt.title("Graph 1")
-
-    for graph in apriori:
-        plt.figure()
-        nx.draw(graph, with_labels=True, node_color='lightgreen', edge_color='gray')
-        plt.title("Candidate Graph")
-
-
-    plt.show()
 
 def display_graph_with_labels(G, title=None, color='lightblue'):
     """
     Display a graph with node labels.
     
     Args:
-        G: NetworkX graph object
-        title: Optional title for the plot
+        G (nx.Graph): NetworkX graph object to display
+        title (str, optional): Title for the plot
+        color (str, optional): Color for the nodes, default is lightblue
     """
     # Create a figure
     plt.figure(figsize=(8, 6))

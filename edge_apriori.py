@@ -28,56 +28,32 @@ def edge_based_merge(G, P):
     Returns:
         list: A list containing the merged graph if valid, or an empty list if not.
     """
+       # only join if they have the same # of edges
+    if G.number_of_edges() != P.number_of_edges():
+        return []
+
     merged_results = []
 
-    # 1. must have same # of edges
-    k = G.number_of_edges()
-    if P.number_of_edges() != k:
-        return merged_results
+    # Loop through all edges in P, removing one at a time.
+    for u, v in list(P.edges()):
+        # 1) remove the edge (u,v) from P
+        P_remove_edge = nx.Graph(P)
+        P_remove_edge.remove_edge(u, v)
 
-    # 2. build sets of label‐edges
-    edges_G = {(G.nodes[u]['label'], G.nodes[v]['label']) for u, v in G.edges()}
-    edges_P = {(P.nodes[u]['label'], P.nodes[v]['label']) for u, v in P.edges()}
+        # 2) test if this (k−1)-edge graph embeds in G
+        iso = UllmanAlgorithm(G, P_remove_edge)
+        if not iso.ullman(exact_match=False):
+            continue
 
-    # 3. require exactly k-1 in common
-    common = edges_G & edges_P
-    if len(common) != k - 1:
-        return merged_results
+        # 3) get the mapping P_remove_edge → G
+        mapping = iso.get_mapping()
 
-    # 4. verify common (k-1)-edge subgraph is isomorphic
-    def build_subgraph(edge_labels):
-        H = nx.Graph()
-        label2node = {}
-        idx = 0
-        for a, b in edge_labels:
-            for lbl in (a, b):
-                if lbl not in label2node:
-                    label2node[lbl] = idx
-                    H.add_node(idx, label=lbl)
-                    idx += 1
-            H.add_edge(label2node[a], label2node[b])
-        return H
-
-    common_G = build_subgraph(common)
-    common_P = build_subgraph(common)
-    if not UllmanAlgorithm(common_G, common_P).ullman(True):
-        return merged_results
-
-    # 5. build the merged (k+1)-edge graph
-    merged_graph = nx.Graph()
-    label2node = {}
-    node_idx = 0
-
-    for a, b in edges_G | edges_P:
-        for lbl in (a, b):
-            if lbl not in label2node:
-                label2node[lbl] = node_idx
-                merged_graph.add_node(node_idx, label=lbl)
-                node_idx += 1
-        merged_graph.add_edge(label2node[a], label2node[b])
-
-    # 6. append to results and return
-    merged_results.append(merged_graph)
+        # 4) build the size-(k+1) candidate by adding that edge back into G
+        merged = nx.Graph(G)
+        mu, mv = mapping[u], mapping[v]
+        if not merged.has_edge(mu, mv):
+            merged.add_edge(mu, mv)
+            merged_results.append(merged)
     return merged_results
 
 

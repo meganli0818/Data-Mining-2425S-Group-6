@@ -72,9 +72,6 @@ def edge_based_merge(G, P):
             merged_results.append(cand2)
             print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
 
-            # We only want the two candidates for the one differing edge
-            return merged_results
-
     print(f"[DEBUG] edge_based_merge generated {len(merged_results)} candidates\n")
     return merged_results
 

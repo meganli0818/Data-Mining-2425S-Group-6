@@ -2,6 +2,9 @@ import networkx as nx
 from ullman_algo import UllmanAlgorithm
 import math
 
+
+# There is an issue regarding processing size k edges, because we cannot take the "union" of common edges without first considering a common node
+# In other words, generating size 2 graphs from size 1 graphs is an edge case...
 def edge_based_merge(G, P):
     """
     Merges two graphs based on edge-based subgraph isomorphism.

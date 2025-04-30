@@ -3,7 +3,7 @@ from ullman_algo import UllmanAlgorithm
 import math
 
 # Debug flag to control output verbosity
-DEBUG = False  # Set to False for production mode
+DEBUG = True  # Set to False for production mode
 
 
 def debug_print(*args, **kwargs):
@@ -11,8 +11,7 @@ def debug_print(*args, **kwargs):
     if DEBUG:
         print(*args, **kwargs)
 
-# There is an issue regarding processing size k edges, because we cannot take the "union" of common edges without first considering a common node
-# In other words, generating size 2 graphs from size 1 graphs is an edge case...
+
 def edge_based_merge(G, P):
     """
     Merges two graphs based on edge-based subgraph isomorphism.
@@ -29,9 +28,14 @@ def edge_based_merge(G, P):
     Returns:
         list: A list containing the merged graph if valid, or an empty list if not.
     """
+    print("\n[DEBUG] Entering edge_based_merge")
     # Ensure the two graphs have the same edge count
     if G.number_of_edges() != P.number_of_edges():
+        print(f"[DEBUG] Edge count mismatch: G={G.number_of_edges()}, P={P.number_of_edges()}")
         return []
+    
+    if G.number_of_edges() == 1 and P.number_of_edges() == 1:
+        return k1_join(G, P)
 
     merged_results = []
 
@@ -40,8 +44,10 @@ def edge_based_merge(G, P):
         if G.has_edge(u_p, v_p):
             continue
 
-        # We want u_p to be the anchor (degree > 1 in P), 
-        # and v_p to be the leaf (degree == 1 in P)
+        # We want u_p to be the anchor (degree > 1), 
+        # and v_p to be the leaf (degree == 1)
+        # This is for consistency, because later when we define a fresh node
+        # we need to know which node (label) to refer
         if P.degree(u_p) < P.degree(v_p):
             u_p, v_p = v_p, u_p
 
@@ -54,28 +60,90 @@ def edge_based_merge(G, P):
 
             # Exact-match isomorphism on the k-1 graphs
             iso = UllmanAlgorithm(G_rem, P_rem)
-            if not iso.ullman(exact_match=True):
+            if not iso.ullman(exact_match=False):
                 continue
 
             mapping = iso.get_mapping()
+            print(f"[DEBUG] Found join: P-edge=({u_p},{v_p}) - G-edge=({u_g},{v_g}); mapping={mapping}")
 
-            # Candidate 1: add back the join edge between mapped nodes
-            mu, mv = mapping[u_p], mapping[v_p]
-            cand1 = nx.Graph(G)
-            if not cand1.has_edge(mu, mv):
-                cand1.add_edge(mu, mv)
-                merged_results.append(cand1)
+            # Candidate 1: add back the join edge between mapped nodes (only if labels match)
+           
+            if G.degree(u_g) >= G.degree(v_g):
+                g_leaf = v_g
+            else:
+                g_leaf = u_g
 
-            # Candidate 2: attach a fresh node at the mapped u_p
-            new_node = max(G.nodes()) + 1
-            cand2 = nx.Graph()
-            cand2.add_nodes_from(G.nodes(data=True))
-            cand2.add_edges_from(G.edges(data=True))
-            label_v = P.nodes[v_p].get('label')
-            cand2.add_node(new_node, label=label_v)
-            cand2.add_edge(mapping[u_p], new_node)
+            # get the two labels
+            p_leaf_label = P.nodes[v_p].get('label')
+            g_leaf_label = G.nodes[g_leaf].get('label')
+
+    
+            if p_leaf_label == g_leaf_label:
+                mu, mv = mapping[u_p], mapping[v_p]
+                cand1 = nx.Graph(G)
+                if not cand1.has_edge(mu, mv):
+                    cand1.add_edge(mu, mv)
+                    merged_results.append(cand1)
+                    print(f"[DEBUG] Cand1 edges: {sorted(cand1.edges())}")
+
+            # Candidate 2: attach the P-leaf (node) along with its edge itself to G
+            leaf = v_p
+            leaf_label = P.nodes[leaf]['label']
+
+            cand2 = nx.Graph(G)
+            # only add the leaf node if it's not already in G
+            if leaf not in cand2.nodes():
+                cand2.add_node(leaf, label=leaf_label)
+
+            # hook it up to the mapped anchor
+            cand2.add_edge(mapping[u_p], leaf)
             merged_results.append(cand2)
+            print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
+            print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
 
+            # We only want the two candidates for the one differing edge
+
+    print(f"[DEBUG] edge_based_merge generated {len(merged_results)} candidates\n")
+    return merged_results
+
+def k1_join(G, P):
+    """
+    Given two single-edge graphs G and P, extend them by joining on their shared vertex label
+    and returning the 2-edge path.
+
+    ex. A-B + B-C -> A-B-C
+
+    Returns:
+        list: a list with exactly one merged graph (or [] if they don't share exactly one label).
+    """
+
+    merged_results = []
+    labels_G = nx.get_node_attributes(G, 'label')
+    labels_P = nx.get_node_attributes(P, 'label')
+
+    shared_labels = set(labels_G.values()) & set(labels_P.values()) # Get intersection of node with the same labels
+    if len(shared_labels) != 1:
+        return merged_results
+    label = shared_labels.pop()
+
+    # Get the shared vertex
+    g_join = next(n for n, l in labels_G.items() if l == label)
+    p_join = next(n for n, l in labels_P.items() if l == label)
+
+    # Get the neighbor of the shared vertex
+    p_neighbor = next(n for n in P.neighbors(p_join))
+
+
+
+    new_node = max(G.nodes()) + 1 # just pick an ID that doesn't cause collision with other IDs
+
+    # Create k=1 candidate by adding P's node (shared label)'s neighbor with G's node (shared label)
+    cand = nx.Graph()
+    cand.add_nodes_from(G.nodes(data=True))
+    cand.add_edges_from(G.edges())
+    cand.add_node(new_node, label=labels_P[p_neighbor])
+    cand.add_edge(g_join, new_node)
+    merged_results.append(cand)
     return merged_results
 
 
@@ -107,14 +175,12 @@ def generate_candidates(freq_subgraphs):
             G_i = freq_list[i]
             G_j = freq_list[j]
 
-            # --- DEBUG: Show what we’re merging ---
             print(f"\n[DEBUG] Pair (i={i}, j={j}):")
             print(f"  G_i edges: {list(G_i.edges(data=True))}")
             print(f"  G_j edges: {list(G_j.edges(data=True))}")
 
             new_candidates = edge_based_merge(G_i, G_j)
 
-            # --- DEBUG: Inspect the result ---
             if not new_candidates:
                 print("  -> edge_based_merge returned 0 candidates")
             else:
@@ -122,7 +188,6 @@ def generate_candidates(freq_subgraphs):
                 for idx, cand in enumerate(new_candidates):
                     print(f"     Candidate {idx}: edges = {list(cand.edges(data=True))}")
 
-            # now your existing dedup logic…
             for new_candidate in new_candidates or []:
                 is_dup = False
                 for existing in candidates:

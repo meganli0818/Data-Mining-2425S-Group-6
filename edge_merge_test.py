@@ -34,8 +34,8 @@ def edge_based_merge(G, P):
         if G.has_edge(u_p, v_p):
             continue
 
-        # We want u_p to be the anchor (degree > 1 in P), 
-        # and v_p to be the leaf (degree == 1 in P)
+        # We want u_p to be the anchor (degree > 1), 
+        # and v_p to be the leaf (degree == 1)
         # This is for consistency, because later when we define a fresh node
         # we need to know which node (label) to refer
         if P.degree(u_p) < P.degree(v_p):
@@ -56,23 +56,39 @@ def edge_based_merge(G, P):
             mapping = iso.get_mapping()
             print(f"[DEBUG] Found join: P-edge=({u_p},{v_p}) - G-edge=({u_g},{v_g}); mapping={mapping}")
 
-            # Candidate 1: add back the join edge between mapped nodes
-            mu, mv = mapping[u_p], mapping[v_p]
-            cand1 = nx.Graph(G)
-            if not cand1.has_edge(mu, mv):
-                cand1.add_edge(mu, mv)
-                merged_results.append(cand1)
-                print(f"[DEBUG] Cand1 edges: {sorted(cand1.edges())}")
+            # Candidate 1: add back the join edge between mapped nodes (only if labels match)
+           
+            if G.degree(u_g) >= G.degree(v_g):
+                g_leaf = v_g
+            else:
+                g_leaf = u_g
 
-            # Candidate 2: attach a fresh node at the mapped u_p
-            new_node = max(G.nodes()) + 1
-            cand2 = nx.Graph()
-            cand2.add_nodes_from(G.nodes(data=True))
-            cand2.add_edges_from(G.edges(data=True))
-            label_v = P.nodes[v_p].get('label')
-            cand2.add_node(new_node, label=label_v)
-            cand2.add_edge(mapping[u_p], new_node)
+            # get the two labels
+            p_leaf_label = P.nodes[v_p].get('label')
+            g_leaf_label = G.nodes[g_leaf].get('label')
+
+    
+            if p_leaf_label == g_leaf_label:
+                mu, mv = mapping[u_p], mapping[v_p]
+                cand1 = nx.Graph(G)
+                if not cand1.has_edge(mu, mv):
+                    cand1.add_edge(mu, mv)
+                    merged_results.append(cand1)
+                    print(f"[DEBUG] Cand1 edges: {sorted(cand1.edges())}")
+
+            # Candidate 2: attach the P-leaf (node) along with its edge itself to G
+            leaf = v_p
+            leaf_label = P.nodes[leaf]['label']
+
+            cand2 = nx.Graph(G)
+            # only add the leaf node if it's not already in G
+            if leaf not in cand2.nodes():
+                cand2.add_node(leaf, label=leaf_label)
+
+            # hook it up to the mapped anchor
+            cand2.add_edge(mapping[u_p], leaf)
             merged_results.append(cand2)
+            print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
             print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
 
             # We only want the two candidates for the one differing edge
@@ -154,7 +170,7 @@ def main():
         print("    Nodes:", nodes)
         print("    Edges:", sorted(m.edges()))
     
-     # Define four nodes: A1, A2, B, C as integers 1,2,3,4
+
     labels = {1: 'A', 2: 'A', 3: 'B', 4: 'C'}
 
     # Graph P1: edges (A1-A2), (A1-B), (A2-B), (A2-C)

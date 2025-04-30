@@ -121,7 +121,7 @@ def generate_candidates(freq_subgraphs):
                             break
 
                     #  Add candidate only if it is not already generated
-                    if not candidate_already_generated:    
+                    if not candidate_already_generated and nx.is_connected(new_candidate):    
                         candidates.add(new_candidate)
                         #debug_print("candidate found")
         print(f"\rGenerated with graph {i}/{len(freq_subgraphs_list)}...", end="")
@@ -150,6 +150,8 @@ def all_subgraphs_frequent(candidate, freq_subgraphs):
     for node in candidate.nodes():
         sub_of_candidate = nx.Graph(candidate)
         sub_of_candidate.remove_node(node)
+        if nx.is_connected(sub_of_candidate) is False:
+            continue
         sub_of_candidate_frequent = False
         for subgraph in freq_subgraphs:
             ullman = UllmanAlgorithm(subgraph, sub_of_candidate)

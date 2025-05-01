@@ -18,7 +18,6 @@ def edge_based_merge(G, P):
     Returns:
         list: A list containing the merged graph if valid, or an empty list if not.
     """
-    print("/-------Entering edge_based_merge-------/")
     # Ensure the two graphs have the same edge count
     if G.number_of_edges() != P.number_of_edges():
         return []
@@ -53,8 +52,6 @@ def edge_based_merge(G, P):
             if not iso.ullman(False):
                 continue
             mapping = iso.get_mapping()
-            print(f"[DEBUG] Found join: P-edge=({u_p},{v_p}) - G-edge=({u_g},{v_g}); mapping={mapping}")
-
 
             # We want u_p to be the "anchor"  (degree > 1), 
             # and v_p to be the "leaf" (degree == 1)
@@ -87,18 +84,13 @@ def edge_based_merge(G, P):
             # /-----Candidate 2-----/
             # add back the join edge between mapped nodes (only if labels match)
             # get the two labels
-            print(f'G label {g_leaf_label}')
-            print(f'P label {p_leaf_label}')
-            print(f'P u P {u_p}')
-            print(f'P v P {v_p}')
     
             if p_leaf_label == g_leaf_label:
                 cand2 = nx.Graph(G)
                 cand2.add_edge(mapping[p_anchor], p_leaf)
                 merged_results.append(cand2)
 
-    print(f"[DEBUG] edge_based_merge generated {len(merged_results)} candidates\n")
-    return merged_results
+            return merged_results
 
 def k1_join(G, P):
     """
@@ -140,23 +132,86 @@ def k1_join(G, P):
     merged_results.append(cand)
     return merged_results
 
+def node_based_merge(G, P):
+    """
+    Merges two graphs based on node-based subgraph isomorphism.
+
+    This function attempts to merge two size k graphs, `G` and `P`, by iteratively 
+    removing a node v from `P` to find a "root" graph of size k-1, and checking whether the 
+    root is a subgraph of G using Ullman's algorithm. If a match is found, it  
+    inserts v into G and connects v to all nodes in the root of G mapping to nodes that
+    v was connected to in the root of P. Finally, it generates two size k+1 merged graphs: one where v
+    is connected to the node of G not in the root, and another where v is not.
+
+    Args:
+        G (nx.Graph): The first graph to be merged.
+        P (nx.Graph): The second graph to be merged.
+
+    Returns:
+        list: The two possible merged graphs. Each merged graph is a NetworkX 
+              graph object. If no valid merges are found, an empty list 
+              is returned.
+
+    Notes:
+        - If the number of nodes in `P` does not match the number of nodes 
+          in `G`, the function returns `None`.
+    """
+    # Ensure P and G are the same size.
+    if len(P.nodes()) != len(G.nodes()):
+        return None
+    merged_results = []
     
+    # Loop through all nodes in P, removing one at a time.
+    for node in P.nodes():
+        P_remove_node = nx.Graph(P)
+        P_remove_node.remove_node(node)
+        ullman = UllmanAlgorithm(G, P_remove_node)
+
+        # Check if the remaining "root" size k-1 graph is a subgraph of G.
+        # If it is, we can merge the two graphs.
+        if ullman.ullman(False):
+            # Get the mapping of the nodes in root of P to root of G
+            unmapped_nodes = ullman.get_unmapped_vertices()
+            G_remove_node = nx.Graph(G)
+            for unmapped_node in unmapped_nodes:
+                G_remove_node.remove_node(unmapped_node)  
+            exact_match = UllmanAlgorithm(G_remove_node, P_remove_node)
+            if exact_match.ullman(True):
+                mapping = ullman.get_mapping()
+
+                # Create a new graph by merging G and P
+                merged_graph = nx.Graph(G)
+                removed_node_neighbors = list(P.neighbors(node))
+                
+                new_node = max(G.nodes()) + 1 if G.nodes() else 1
+                merged_graph.add_node(new_node, label=P.nodes[node]['label'])
+            
+                # Connect the new node to the nodes in G that correspond to the isomorphism
+                # between P and G roots
+                for neighbor in removed_node_neighbors:
+                    merged_graph.add_edge(new_node, mapping[neighbor])
+                
+                # Connect the new node to the node in G that is not in the root for
+                # a second merged graph
+                merged_graph2 = nx.Graph(merged_graph)
+                for unmapped_node in unmapped_nodes:
+                    merged_graph2.add_edge(new_node, unmapped_node)
+                merged_results.append(merged_graph)
+                merged_results.append(merged_graph2)
+        return merged_results
 
 def main():
     G = nx.Graph()
-    G.add_node(0, label='A')
-    G.add_node(1, label='A')
-    G.add_node(2, label='B')
-    G.add_node(3, label='C')
-    G.add_edges_from([(0, 1), (1, 2), (0,2), (1,3)])
+    G.add_node(0, label='X')
+    G.add_node(1, label='Y')
+    G.add_node(2, label='Z')
+    G.add_edges_from([(0, 1), (1,2)])
 
-    # Graph P: 2–5–6
     P = nx.Graph()
-    P.add_node(0, label='A')
-    P.add_node(1, label='A')
-    P.add_node(2, label='B')
-    P.add_node(3, label='C')
-    P.add_edges_from([(0, 1), (1, 2), (0,2), (2,3)])
+    P.add_node(0, label='X')
+    P.add_node(1, label='Y')
+    P.add_node(2, label='Z')
+    P.add_edges_from([(0, 1), (1,2)])
 
     print("\n--- Input Graphs ---")
     print("G nodes:", list(G.nodes(data=True)))

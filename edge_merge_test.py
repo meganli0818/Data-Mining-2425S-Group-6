@@ -1,6 +1,16 @@
 import networkx as nx
 from ullman_algo import UllmanAlgorithm
-from collections import defaultdict
+import math
+
+# Debug flag to control output verbosity
+DEBUG = False  # Set to False for production mode
+
+
+def debug_print(*args, **kwargs):
+    """Print only if DEBUG is True."""
+    if DEBUG:
+        print(*args, **kwargs)
+
 
 def edge_based_merge(G, P):
     """
@@ -91,6 +101,7 @@ def edge_based_merge(G, P):
                 merged_results.append(cand2)
 
             return merged_results
+    return merged_results
 
 def k1_join(G, P):
     """
@@ -132,103 +143,291 @@ def k1_join(G, P):
     merged_results.append(cand)
     return merged_results
 
-def node_based_merge(G, P):
-    """
-    Merges two graphs based on node-based subgraph isomorphism.
 
-    This function attempts to merge two size k graphs, `G` and `P`, by iteratively 
-    removing a node v from `P` to find a "root" graph of size k-1, and checking whether the 
-    root is a subgraph of G using Ullman's algorithm. If a match is found, it  
-    inserts v into G and connects v to all nodes in the root of G mapping to nodes that
-    v was connected to in the root of P. Finally, it generates two size k+1 merged graphs: one where v
-    is connected to the node of G not in the root, and another where v is not.
+
+def generate_candidates(freq_subgraphs):
+    """
+    Generates candidate subgraphs of size k+1 from a set of frequent subgraphs of size k.
+
+    This function takes a list of frequent subgraphs of size k and generates 
+    candidate subgraphs of size k+1 by edge-based merging every pair of frequent subgraphs. 
+    It ensures that duplicate candidates are not added by checking for 
+    isomorphism using the Ullman algorithm.
 
     Args:
-        G (nx.Graph): The first graph to be merged.
-        P (nx.Graph): The second graph to be merged.
+        freq_subgraphs (list): A list or set of frequent subgraphs of size k.
 
     Returns:
-        list: The two possible merged graphs. Each merged graph is a NetworkX 
-              graph object. If no valid merges are found, an empty list 
-              is returned.
-
-    Notes:
-        - If the number of nodes in `P` does not match the number of nodes 
-          in `G`, the function returns `None`.
+        set: A set of candidate subgraphs of size k+1. If no candidates can 
+             be generated or the input is empty, returns `None`.
     """
-    # Ensure P and G are the same size.
-    if len(P.nodes()) != len(G.nodes()):
+    if freq_subgraphs is None or len(freq_subgraphs) == 0:
         return None
-    merged_results = []
+    freq_subgraphs_list = list(freq_subgraphs)
+    candidates = set()
     
-    # Loop through all nodes in P, removing one at a time.
-    for node in P.nodes():
-        P_remove_node = nx.Graph(P)
-        P_remove_node.remove_node(node)
-        ullman = UllmanAlgorithm(G, P_remove_node)
+    # Loop through all pairs of frequent subgraphs, merging each pair to create new candidates.
+    for i in range(len(freq_subgraphs_list)):
+        for j in range(i, len(freq_subgraphs_list)):
+            new_candidates = edge_based_merge(freq_subgraphs_list[i], freq_subgraphs_list[j])
+            if new_candidates is not None:
+        
+                # Check if each candidate is already generated.
+                for new_candidate in new_candidates:
+                    candidate_already_generated = False
+                    for existing_candidate in candidates:
+                        ullman_exact = UllmanAlgorithm(existing_candidate, new_candidate)
+                        
+                        # No need to add candidate if it is already generated.
+                        if ullman_exact.ullman(True):
+                            candidate_already_generated = True
+                            break
 
-        # Check if the remaining "root" size k-1 graph is a subgraph of G.
-        # If it is, we can merge the two graphs.
-        if ullman.ullman(False):
-            # Get the mapping of the nodes in root of P to root of G
-            unmapped_nodes = ullman.get_unmapped_vertices()
-            G_remove_node = nx.Graph(G)
-            for unmapped_node in unmapped_nodes:
-                G_remove_node.remove_node(unmapped_node)  
-            exact_match = UllmanAlgorithm(G_remove_node, P_remove_node)
-            if exact_match.ullman(True):
-                mapping = ullman.get_mapping()
+                    #  Add candidate only if it is not already generated
+                    if not candidate_already_generated and nx.is_connected(new_candidate):    
+                        candidates.add(new_candidate)
+                        #debug_print("candidate found")
+        print(f"\rGenerated with graph {i}/{len(freq_subgraphs_list)}...", end="")
 
-                # Create a new graph by merging G and P
-                merged_graph = nx.Graph(G)
-                removed_node_neighbors = list(P.neighbors(node))
-                
-                new_node = max(G.nodes()) + 1 if G.nodes() else 1
-                merged_graph.add_node(new_node, label=P.nodes[node]['label'])
-            
-                # Connect the new node to the nodes in G that correspond to the isomorphism
-                # between P and G roots
-                for neighbor in removed_node_neighbors:
-                    merged_graph.add_edge(new_node, mapping[neighbor])
-                
-                # Connect the new node to the node in G that is not in the root for
-                # a second merged graph
-                merged_graph2 = nx.Graph(merged_graph)
-                for unmapped_node in unmapped_nodes:
-                    merged_graph2.add_edge(new_node, unmapped_node)
-                merged_results.append(merged_graph)
-                merged_results.append(merged_graph2)
-        return merged_results
-
-def main():
-    G = nx.Graph()
-    G.add_node(0, label='X')
-    G.add_node(1, label='Y')
-    G.add_node(2, label='Z')
-    G.add_edges_from([(0, 1), (1,2)])
-
-    P = nx.Graph()
-    P.add_node(0, label='X')
-    P.add_node(1, label='Y')
-    P.add_node(2, label='Z')
-    P.add_edges_from([(0, 1), (1,2)])
-
-    print("\n--- Input Graphs ---")
-    print("G nodes:", list(G.nodes(data=True)))
-    print("G edges:", list(G.edges()))
-    print("P nodes:", list(P.nodes(data=True)))
-    print("P edges:", list(P.edges()))
-
-    # Run your merge
-    merged = edge_based_merge(G, P)
-
-    print(f"\n--- {len(merged)} Merged Candidate(s) ---")
-    for i, M in enumerate(merged):
-        print(f"Candidate {i}:")
-        print("  nodes:", list(M.nodes(data=True)))
-        print("  edges:", list(M.edges()))
-
-if __name__ == "__main__":
-    main()
+    print()
+    return candidates
 
 
+def all_subgraphs_frequent(candidate, freq_subgraphs):
+    """
+    Checks if all (k-1)-size subgraphs of a k-size candidate graph are frequent.
+
+    This function iteratively removes each edge from the candidate graph to 
+    generate all possible (k-1)-size subgraphs. It then checks if each of these 
+    subgraphs is present in the list of frequent subgraphs using the Ullman 
+    algorithm for isomorphism.
+
+    Args:
+        candidate (nx.Graph): The candidate graph of size k.
+        freq_subgraphs (list): A list of frequent subgraphs of size k-1.
+
+    Returns:
+        bool: True if all (k-1)-size subgraphs of the candidate are frequent, 
+              False otherwise.
+    """
+    for u, v in candidate.edges():
+        sub = nx.Graph(candidate)
+        sub.remove_edge(u, v)
+        if not nx.is_connected(sub):
+            continue
+        freq = False
+        for subgraph in freq_subgraphs:
+            ullman = UllmanAlgorithm(subgraph, sub)
+            if ullman.ullman(True):
+                freq = True
+                break
+        if not freq:
+            return False
+    return True
+
+
+def prune(candidates, freq_subgraphs):
+    """
+    Prunes candidate subgraphs based on whether all their (k-1)-size subgraphs 
+    are frequent.
+
+    This function iterates through a set of candidate subgraphs and retains 
+    only those for which all (k-1)-size subgraphs are present in the list of 
+    frequent subgraphs. The check is performed using the `all_subgraphs_frequent` 
+    function.
+
+    Args:
+        candidates (set): A set of candidate subgraphs of size k.
+        freq_subgraphs (list): A list of frequent subgraphs of size k-1.
+
+    Returns:
+        set: A set of pruned candidate subgraphs that satisfy the condition 
+             that all their (k-1)-size subgraphs are frequent.
+    """
+    pruned_candidates = set()
+    for candidate in candidates:
+        if all_subgraphs_frequent(candidate, freq_subgraphs):
+            pruned_candidates.add(candidate)
+    return pruned_candidates
+
+
+def all_single_edge_graphs(graph_dataset):
+    """
+    Generates all single-edge graphs from a dataset of graphs.
+
+    This function extracts edges from the input graph dataset 
+    and creates single edge graphs for each unique edge.
+
+    Args:
+        graph_dataset (list): A list of NetworkX graph objects representing the dataset.
+
+    Returns:
+        list: A list of single edge graphs, each containing exactly one edge connecting two labeled nodes.
+    """
+    unique_edge_labels = set()
+    single_edge_graphs = []
+
+    for graph in graph_dataset:
+        for u, v in graph.edges():
+            # sort labels to avoid duplicates (A,B) vs (B,A)
+            label_u = graph.nodes[u].get('label')
+            label_v = graph.nodes[v].get('label')
+            if label_u is None or label_v is None:
+                continue
+            pair = tuple(sorted((label_u, label_v)))
+            unique_edge_labels.add(pair)
+
+    debug_print("unique edge label pairs:", unique_edge_labels)
+
+    for label_u, label_v in unique_edge_labels:
+        G = nx.Graph()
+        G.add_node(0, label=label_u)
+        G.add_node(1, label=label_v)
+        G.add_edge(0, 1)
+        single_edge_graphs.append(G)
+
+    return single_edge_graphs
+
+
+def apriori(graph_dataset, min_freq, verbose=None):
+    """
+    Apriori algorithm to find frequent subgraphs in a dataset of graphs.
+
+    This function implements the Apriori algorithm to mine frequent subgraphs 
+    from a dataset of graphs. It starts by identifying single_edge graphs (graphs 
+    with a single edge) and iteratively generates larger candidate 
+    subgraphs to check.
+
+    Args:
+        graph_dataset (list): A list of NetworkX graph objects representing the dataset.
+        min_freq (float): Minimum frequency threshold (between 0.0 and 1.0). 
+                          A subgraph is considered frequent if it appears in 
+                          a fraction of at least min_freq graphs.
+        verbose (bool, optional): Overrides the global `DEBUG` setting. If `True`, 
+                                  enables debug output. If `None`, uses the global 
+                                  `DEBUG` value.
+
+    Returns:
+        list: A list of frequent subgraphs. Each subgraph is a NetworkX graph object.
+    """
+     # Use provided verbosity or fall back to global setting
+    local_debug = DEBUG if verbose is None else verbose
+    
+    # Save original DEBUG value
+    original_debug = globals()['DEBUG']
+    globals()['DEBUG'] = local_debug
+    
+    min_support = math.ceil(min_freq * len(graph_dataset))
+    freq_subgraphs = []
+
+    # Generate all singletons
+    single_edge_graphs = all_single_edge_graphs(graph_dataset)
+    curr_freq_subgraphs = []
+    for single_edge_graph in single_edge_graphs:
+        # Count support for each singleton
+        candidate_supp = {}
+        for graph in graph_dataset:
+            if single_edge_graph.number_of_edges() <= graph.number_of_edges():
+                ullman = UllmanAlgorithm(graph, single_edge_graph)
+                if ullman.ullman(False):
+                    if single_edge_graph not in candidate_supp:
+                        candidate_supp[single_edge_graph] = 1
+                    else:
+                        candidate_supp[single_edge_graph] += 1
+        # Save singletons based on minimum support
+        for candidate, supp in candidate_supp.items():
+            if supp >= min_support:
+                curr_freq_subgraphs.append(candidate)
+    
+    debug_print("number of frequent single-edge graphs: ", len(curr_freq_subgraphs))
+    debug_print("frequent single edge graphs ")
+    print_graph_nodes_simple(curr_freq_subgraphs)
+
+    # Apriori algorithm
+    while curr_freq_subgraphs and len(curr_freq_subgraphs) > 0:
+        
+        # Generate candidates of size k+1 from current frequent subgraphs of size k
+        freq_subgraphs.extend(curr_freq_subgraphs)
+        unpruned_candidates = generate_candidates(curr_freq_subgraphs)
+        print("generated candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
+        debug_print("generated candidates: ")
+        print_graph_nodes_simple(unpruned_candidates)
+
+        # Prune candidates
+        candidates = prune(unpruned_candidates, curr_freq_subgraphs)
+        print("pruned candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
+        print("number of candidates: ", len(candidates))
+
+        print(f"size of K : {curr_freq_subgraphs[0].number_of_edges() + 1}")
+        print(f"size of curr_freq_subgraph : {len(curr_freq_subgraphs)}")
+
+
+        # Count support for each candidate
+        candidate_supp = {}
+        counter = 1
+        for graph in graph_dataset:
+            inner_counter = 1
+            for candidate in candidates:
+                if candidate.number_of_edges() <= graph.number_of_edges():
+                    ullman = UllmanAlgorithm(graph, candidate)
+                    print(f"\rChecked candidate {inner_counter}/{len(candidates)} with graph {counter}/{len(graph_dataset)}    ", end="")
+                    if ullman.ullman(False):
+                        if candidate not in candidate_supp:
+                            candidate_supp[candidate] = 1
+                        else:
+                            candidate_supp[candidate] += 1
+                inner_counter += 1
+            counter += 1
+        
+        print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
+        debug_print("number of potential candidates: ", len(candidate_supp))
+        
+        # Save candidates based on minimum support for the next round
+        curr_freq_subgraphs = []
+        for candidate, supp in candidate_supp.items():
+            if supp >= min_support:
+                curr_freq_subgraphs.append(candidate)
+        
+        print("number of candidates: ", len(curr_freq_subgraphs))
+        print()
+    
+    
+    # Restore original DEBUG value
+    globals()['DEBUG'] = original_debug
+    
+    return freq_subgraphs
+
+
+
+def print_graph_nodes_simple(graph_list, debug_only=True):
+    """
+    Print the nodes of each graph along with their labels.
+    
+    Args:
+        graph_list: List of NetworkX graph objects
+        debug_only: If True, only print when DEBUG is True
+    """
+    if debug_only and not DEBUG:
+        return
+        
+    all_nodes = []
+    
+    print("\nGraph nodes and labels:")
+    for i, graph in enumerate(graph_list):
+        nodes = list(graph.nodes())
+        all_nodes.append(nodes)
+        
+        # Get the labels for this graph
+        labels = nx.get_node_attributes(graph, 'label')
+        
+        # Print nodes with their labels
+        print(f"Graph {i}: {nodes}")
+        print(f"  Labels: ", end="")
+        for node in nodes:
+            label = labels.get(node, "No label")
+            print(f"Node {node}:{label} ", end="")
+        print()  # New line after each graph
+
+        print("  Edges: ", len(graph.edges()))
+
+    print("\n")

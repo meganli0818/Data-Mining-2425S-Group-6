@@ -31,16 +31,21 @@ class UllmanAlgorithm:
         Raises:
             ValueError: If P has more edges or vertices than G
         """
-        if len(P.edges()) > len(G.edges()):
-            raise ValueError("P cannot be larger than G")
-        if len(P.nodes()) > len(G.nodes()):
-            raise ValueError("P cannot be larger than G")
+        # if len(P.nodes()) > len(G.nodes()):
+        #     raise ValueError("P cannot be larger than G")
+        
+        # this check is not reinforced in edge-based join growth
             
         # Store degree information for each vertex
         self.P_dictionary_by_vertex = dict(P.degree())
         self.G_dictionary_by_vertex = dict(G.degree())
         self.G_vertices = set(G.nodes())
         self.P_vertices = set(P.nodes())
+
+        self.G_labels = nx.get_node_attributes(G, 'label')
+        self.P_labels = nx.get_node_attributes(P, 'label')
+
+        self.failure_count = 0
         
         # Group G's vertices by degree for efficient matching
         G_dictionary_by_degree = {}
@@ -84,10 +89,33 @@ class UllmanAlgorithm:
         g_node_to_index = {g: i for i, g in enumerate(self.G_dictionary_by_vertex.keys())}
         for p, p_degree in self.P_dictionary_by_vertex.items():
             for g, g_degree in self.G_dictionary_by_vertex.items():
-                # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g
-                if p_degree <= g_degree:
+                # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g and their labels match
+                if p_degree <= g_degree and self.P_labels[p] == self.G_labels[g]:
                     candidate_mappings[p_node_to_index.get(p)][g_node_to_index.get(g)] = True
         return candidate_mappings
+    
+    def exact_candidate_mappings(self):
+        """
+        Generate initial candidate mapping matrix based on vertex degrees.
+        
+        A vertex p in P can be mapped to vertex g in G if degree(p) <= degree(g).
+        
+        Returns:
+            numpy.ndarray: Boolean matrix where True indicates a potential mapping
+        """
+        # Create a boolean matrix to represent candidate mappings
+        candidate_mappings = np.zeros((len(self.P_dictionary_by_vertex), len(self.G_dictionary_by_vertex)), dtype=bool)
+
+        # Iterate through the degrees of P and G to find candidate mappings
+        p_node_to_index = {p: i for i, p in enumerate(self.P_dictionary_by_vertex.keys())}
+        g_node_to_index = {g: i for i, g in enumerate(self.G_dictionary_by_vertex.keys())}
+        for p, p_degree in self.P_dictionary_by_vertex.items():
+            for g, g_degree in self.G_dictionary_by_vertex.items():
+                # vertex p in P can be mapped to vertex g in G if the degree of p <= degree of g
+                if p_degree == g_degree and self.P_labels[p] == self.G_labels[g]:
+                    candidate_mappings[p_node_to_index.get(p)][g_node_to_index.get(g)] = True
+        return candidate_mappings
+
 
     def get_unmapped_vertices(self):
         """
@@ -97,18 +125,36 @@ class UllmanAlgorithm:
             set: Vertices in G not included in the mapping
         """
         return set(self.G_vertices) - set(self.visited.values())
-
-    def ullman(self):
+    
+    def get_mapping(self):
         """
-        Execute Ullman's algorithm to find if P is a subgraph of G.
+        Get the current mapping of vertices from P to G.
+        
+        Returns:
+            dict: Mapping of vertices in P to vertices in G
+        """
+        return self.visited
+
+    def ullman(self, exact_match):
+        """
+        Execute Ullman's algorithm to find if P is a subgraph of G, or if they are isomorphic.
+
+        Parameters:
+            exact_match (bool): If True, find an exact match (same degree), otherwise find a subgraph match
         
         Returns:
             bool: True if P is a subgraph of G, False otherwise
         """
-        first_vertex = next(iter(self.adj_list_P.keys()))
-        return self.recursive_ullman(first_vertex, self.candidate_mappings(), self.visited)
+        if len(self.adj_list_P) == 0:
+            return True
+        first_vertex = next(iter(sorted(self.adj_list_P.keys())))
+        if exact_match:
+            candidate_mapping_matrix = self.exact_candidate_mappings()
+        else:
+            candidate_mapping_matrix = self.candidate_mappings()
+        return self.recursive_ullman(first_vertex, candidate_mapping_matrix, self.visited, start=True)
 
-    def recursive_ullman(self, x, candidate_mapping_matrix, visited):
+    def recursive_ullman(self, x, candidate_mapping_matrix, visited, start=False):
         """
         Recursive function to find a mapping from P to G.
         
@@ -160,7 +206,7 @@ class UllmanAlgorithm:
                 
                 # Choose next vertex to match (prioritize neighbors)
                 if unvisited_neighbors:
-                    next_x = next(iter(unvisited_neighbors))
+                    next_x = next(iter(sorted(unvisited_neighbors)))
                     if self.recursive_ullman(next_x, candidate_copy, visited):
                         return True
                 else:
@@ -168,11 +214,17 @@ class UllmanAlgorithm:
                     leftoverVertices = set(self.adj_list_P.keys()) - set(visited.keys())
                     if not leftoverVertices:  # All vertices matched
                         return True
-                    next_x = next(iter(leftoverVertices))
+                    next_x = next(iter(sorted(leftoverVertices)))
                     if self.recursive_ullman(next_x, candidate_copy, visited):
                         return True
                 
                 # Remove mapping if this branch fails (backtrack)
                 del visited[x]
+                if start:
+                    self.failure_count += 1
+                    if self.failure_count%100 == 0:
+                        print(f"\rUllman failures: {self.failure_count}        ", end="")
                 
+        # No valid mapping found
+        
         return False

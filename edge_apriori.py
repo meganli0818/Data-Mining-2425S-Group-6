@@ -101,6 +101,7 @@ def edge_based_merge(G, P):
                 merged_results.append(cand2)
 
             return merged_results
+    return merged_results
 
 def k1_join(G, P):
     """

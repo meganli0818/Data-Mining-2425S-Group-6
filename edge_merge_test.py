@@ -1,6 +1,6 @@
 import networkx as nx
 from ullman_algo import UllmanAlgorithm
-import math
+from collections import defaultdict
 
 def edge_based_merge(G, P):
     """
@@ -18,80 +18,84 @@ def edge_based_merge(G, P):
     Returns:
         list: A list containing the merged graph if valid, or an empty list if not.
     """
-    print("\n[DEBUG] Entering edge_based_merge")
+    print("/-------Entering edge_based_merge-------/")
     # Ensure the two graphs have the same edge count
     if G.number_of_edges() != P.number_of_edges():
-        print(f"[DEBUG] Edge count mismatch: G={G.number_of_edges()}, P={P.number_of_edges()}")
         return []
     
-    if G.number_of_edges() == 1 and P.number_of_edges() == 1:
+    if G.number_of_edges() == 1 and P.number_of_edges() == 1: # K=1 Case
         return k1_join(G, P)
 
     merged_results = []
 
-    # Only consider the P-edge that does not already exist in G
+    # Loop through all possible k-1 subgraphs and check for isomorphism
     for u_p, v_p in P.edges():
-        if G.has_edge(u_p, v_p):
-            continue
+        P_rem = nx.Graph(P)
+        P_rem.remove_edge(u_p, v_p)
 
-        # We want u_p to be the anchor (degree > 1), 
-        # and v_p to be the leaf (degree == 1)
-        # This is for consistency, because later when we define a fresh node
-        # we need to know which node (label) to refer
-        if P.degree(u_p) < P.degree(v_p):
-            u_p, v_p = v_p, u_p
-
+        # Avoid checking isomorphisms for 0-degree nodes
+        for node in (u_p, v_p):
+            if P_rem.degree(node) == 0:
+                P_rem.remove_node(node)
+    
         # Try removing this P-edge against each G-edge
         for u_g, v_g in G.edges():
-            P_rem = nx.Graph(P)
-            P_rem.remove_edge(u_p, v_p)
             G_rem = nx.Graph(G)
             G_rem.remove_edge(u_g, v_g)
 
-            # Exact-match isomorphism on the k-1 graphs
-            iso = UllmanAlgorithm(G_rem, P_rem)
-            if not iso.ullman(exact_match=False):
-                continue
+            for node in (u_p, v_p): 
+                if G_rem.degree(node) == 0: # Avoid checking isomorphisms for 0-degree nodes
+                    G_rem.remove_node(node)
 
+            # Check if the remaining "root" size k-1 graph is a subgraph of G.
+            # If it is, we can merge the two graphs.
+            iso = UllmanAlgorithm(G_rem, P_rem)
+            if not iso.ullman(False):
+                continue
             mapping = iso.get_mapping()
             print(f"[DEBUG] Found join: P-edge=({u_p},{v_p}) - G-edge=({u_g},{v_g}); mapping={mapping}")
 
-            # Candidate 1: add back the join edge between mapped nodes (only if labels match)
-           
+
+            # We want u_p to be the "anchor"  (degree > 1), 
+            # and v_p to be the "leaf" (degree == 1)
+            # This is for consistency, we need to know which node to refer to
             if G.degree(u_g) >= G.degree(v_g):
                 g_leaf = v_g
             else:
                 g_leaf = u_g
 
-            # get the two labels
-            p_leaf_label = P.nodes[v_p].get('label')
+            if P.degree(u_p) >= P.degree(v_p):
+                p_leaf = v_p
+                p_anchor = u_p
+            else:
+                p_leaf = u_p
+                p_anchor = v_p
+            
+            p_leaf_label = P.nodes[p_leaf].get('label')
             g_leaf_label = G.nodes[g_leaf].get('label')
 
+            
+            # /-----Candidate 1-----/
+            # attach the P-leaf (node) along with its edge itself to G
+            cand1 = nx.Graph(G)
+            p_node = max(G.nodes()) + 1
+            # hook it up to the mapped anchor
+            cand1.add_node(p_node, label=p_leaf_label)
+            cand1.add_edge(mapping[p_anchor], p_node)
+            merged_results.append(cand1)
+
+            # /-----Candidate 2-----/
+            # add back the join edge between mapped nodes (only if labels match)
+            # get the two labels
+            print(f'G label {g_leaf_label}')
+            print(f'P label {p_leaf_label}')
+            print(f'P u P {u_p}')
+            print(f'P v P {v_p}')
     
             if p_leaf_label == g_leaf_label:
-                mu, mv = mapping[u_p], mapping[v_p]
-                cand1 = nx.Graph(G)
-                if not cand1.has_edge(mu, mv):
-                    cand1.add_edge(mu, mv)
-                    merged_results.append(cand1)
-                    print(f"[DEBUG] Cand1 edges: {sorted(cand1.edges())}")
-
-            # Candidate 2: attach the P-leaf (node) along with its edge itself to G
-            leaf = v_p
-            leaf_label = P.nodes[leaf]['label']
-
-            cand2 = nx.Graph(G)
-            # only add the leaf node if it's not already in G
-            if leaf not in cand2.nodes():
-                cand2.add_node(leaf, label=leaf_label)
-
-            # hook it up to the mapped anchor
-            cand2.add_edge(mapping[u_p], leaf)
-            merged_results.append(cand2)
-            print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
-            print(f"[DEBUG] Cand2 edges: {sorted(cand2.edges())}")
-
-            # We only want the two candidates for the one differing edge
+                cand2 = nx.Graph(G)
+                cand2.add_edge(mapping[p_anchor], p_leaf)
+                merged_results.append(cand2)
 
     print(f"[DEBUG] edge_based_merge generated {len(merged_results)} candidates\n")
     return merged_results
@@ -136,99 +140,38 @@ def k1_join(G, P):
     merged_results.append(cand)
     return merged_results
 
-
-
     
 
 def main():
-    # Define three nodes with labels X, Y, Z
-    labels = {1: 'X', 2: 'Y', 3: 'Z'}
+    G = nx.Graph()
+    G.add_node(0, label='A')
+    G.add_node(1, label='A')
+    G.add_node(2, label='B')
+    G.add_node(3, label='C')
+    G.add_edges_from([(0, 1), (1, 2), (0,2), (1,3)])
 
-    # Graph 1: x-y-z path
-    G1 = nx.Graph()
-    G1.add_nodes_from(labels.keys())
-    nx.set_node_attributes(G1, labels, 'label')
-    G1.add_edges_from([(1, 2), (2, 3)])
+    # Graph P: 2–5–6
+    P = nx.Graph()
+    P.add_node(0, label='A')
+    P.add_node(1, label='A')
+    P.add_node(2, label='B')
+    P.add_node(3, label='C')
+    P.add_edges_from([(0, 1), (1, 2), (0,2), (2,3)])
 
-    # Graph 2: y-z-x path
-    G2 = nx.Graph()
-    G2.add_nodes_from(labels.keys())
-    nx.set_node_attributes(G2, labels, 'label')
-    G2.add_edges_from([(2, 3), (3, 1)])
+    print("\n--- Input Graphs ---")
+    print("G nodes:", list(G.nodes(data=True)))
+    print("G edges:", list(G.edges()))
+    print("P nodes:", list(P.nodes(data=True)))
+    print("P edges:", list(P.edges()))
 
-    print("G1 edges:", sorted(G1.edges()), "labels:", labels)
-    print("G2 edges:", sorted(G2.edges()), "labels:", labels)
+    # Run your merge
+    merged = edge_based_merge(G, P)
 
-    # Perform edge-based merge
-    merged = edge_based_merge(G1, G2)
-    print("\nMerged candidates:")
-    if not merged:
-        print("  No candidates generated.")
-    for i, m in enumerate(merged, 1):
-        nodes = [(n, m.nodes[n]['label']) for n in sorted(m.nodes())]
-        print(f"  Candidate {i}:")
-        print("    Nodes:", nodes)
-        print("    Edges:", sorted(m.edges()))
-    
-
-    labels = {1: 'A', 2: 'A', 3: 'B', 4: 'C'}
-
-    # Graph P1: edges (A1-A2), (A1-B), (A2-B), (A2-C)
-    P1 = nx.Graph()
-    P1.add_nodes_from(labels.keys())
-    nx.set_node_attributes(P1, labels, 'label')
-    P1.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4)])
-
-    # Graph P2: edges (A1-A2), (A1-B), (A2-B), (B-C)
-    P2 = nx.Graph()
-    P2.add_nodes_from(labels.keys())
-    nx.set_node_attributes(P2, labels, 'label')
-    P2.add_edges_from([(1, 2), (1, 3), (2, 3), (3, 4)])
-
-    print("\n")
-    print("Second Test")
-    print("\n")
-    print("P1 edges:", sorted(P1.edges()), "with labels:", [(n, P1.nodes[n]['label']) for n in P1.nodes()])
-    print("P2 edges:", sorted(P2.edges()), "with labels:", [(n, P2.nodes[n]['label']) for n in P2.nodes()])
-
-    # Perform edge-based merge
-    merged = edge_based_merge(P1, P2)
-    print("\nMerged candidates:")
-    if not merged:
-        print("  No candidates generated.")
-    for i, m in enumerate(merged, 1):
-        nodes = [(n, m.nodes[n]['label']) for n in sorted(m.nodes())]
-        print(f"  Candidate {i}:")
-        print("    Nodes:", nodes)
-        print("    Edges:", sorted(m.edges()))
-  # ─────── Single-edge merge: A-B with B-C ───────
-    # Use disjoint node sets so mapping is unambiguous
-    labels_ab = {1: 'A', 2: 'B'}
-    G_ab = nx.Graph()
-    G_ab.add_nodes_from(labels_ab)
-    nx.set_node_attributes(G_ab, labels_ab, 'label')
-    G_ab.add_edge(1, 2)
-
-    labels_bc = {3: 'B', 4: 'C'}
-    G_bc = nx.Graph()
-    G_bc.add_nodes_from(labels_bc)
-    nx.set_node_attributes(G_bc, labels_bc, 'label')
-    G_bc.add_edge(3, 4)
-
-    print("\nSingle-edge merge test (A-B with B-C)")
-    print("G_ab edges:", sorted(G_ab.edges()), "labels:", [(n, G_ab.nodes[n]['label']) for n in G_ab])
-    print("G_bc edges:", sorted(G_bc.edges()), "labels:", [(n, G_bc.nodes[n]['label']) for n in G_bc])
-
-    merged_single = edge_based_merge(G_ab, G_bc)
-    print("\nMerged candidates:")
-    if not merged_single:
-        print("  No candidates generated.")
-    else:
-        for i, m in enumerate(merged_single, 1):
-            nodes = [(n, m.nodes[n]['label']) for n in sorted(m.nodes())]
-            print(f"  Candidate {i}:")
-            print("    Nodes:", nodes)
-            print("    Edges:", sorted(m.edges()))
+    print(f"\n--- {len(merged)} Merged Candidate(s) ---")
+    for i, M in enumerate(merged):
+        print(f"Candidate {i}:")
+        print("  nodes:", list(M.nodes(data=True)))
+        print("  edges:", list(M.edges()))
 
 if __name__ == "__main__":
     main()

@@ -26,7 +26,7 @@ def main():
     
     # Measure execution time of the Apriori algorithm
     start_time = time.time()
-    apriori = Apriori_Node.apriori(graphs, 0.8)  # Run with 80% support threshold
+    apriori = Apriori_Node.apriori(graphs, 0.3)  # Run with 80% support threshold
     end_time = time.time()
 
     print("Time taken for apriori in seconds:", end_time - start_time)

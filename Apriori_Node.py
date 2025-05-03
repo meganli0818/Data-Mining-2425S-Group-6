@@ -302,25 +302,24 @@ def apriori(graph_dataset, min_freq, verbose=None):
         candidate_supp = {}
         curr_freq_subgraphs = []
         counter = 1
-        for graph in graph_dataset:
+        for candidate in candidates:
             inner_counter = 1
-            for candidate in candidates:
-                if candidate_supp[candidate] >= min_support:
-                    curr_freq_subgraphs.append(candidate)
-                    candidates.remove(candidate)
-                    continue
+            for graph in graph_dataset:
                 if candidate.number_of_nodes() <= graph.number_of_nodes():
                     ullman = UllmanAlgorithm(graph, candidate)
-                    print(f"\rChecked candidate {inner_counter}/{len(candidates)} with graph {counter}/{len(graph_dataset)}    ", end="")
+                    print(f"\rChecked candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
                     if ullman.ullman(False):
                         if candidate not in candidate_supp:
                             candidate_supp[candidate] = 1
                         else:
                             candidate_supp[candidate] += 1
+                        if candidate_supp[candidate] >= min_support:
+                            curr_freq_subgraphs.append(candidate)
+                            break
                 inner_counter += 1
             counter += 1
         
-        print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
+        #print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
         debug_print("number of potential candidates: ", len(candidate_supp))
 
         print("number of candidates: ", len(curr_freq_subgraphs))

@@ -119,7 +119,7 @@ class UllmanAlgorithmEdge:
         return candidate_mappings
 
 
-    def get_unmapped_vertices(self):
+    def get_unmapped_vertices_in_G(self):
         """
         Get vertices in G that were not mapped to any vertex in P.
         
@@ -127,6 +127,39 @@ class UllmanAlgorithmEdge:
             set: Vertices in G not included in the mapping
         """
         return set(self.G_vertices) - set(self.visited.values())
+    
+    def get_unmapped_vertices_in_P(self):
+        """
+        Get vertices in G that were not mapped to any vertex in P.
+        
+        Returns:
+            set: Vertices in G not included in the mapping
+        """
+        return set(self.P_vertices) - set(self.visited.keys())
+
+    def get_unmapped_edges_in_G(self):
+        """
+        Get edges in G that were not mapped to any edge in P.
+        
+        Returns:
+            set: Edges in G not included in the mapping
+        """
+
+        visited_edges_values = set(self.visited_edges.values())
+        visited_edges_values = visited_edges_values | {(v,u) for (u,v) in visited_edges_values}
+        return set(self.P_edges) - set(visited_edges_values)
+    
+    def get_unmapped_edges_in_P(self):
+        """
+        Get edges in P that were not mapped to any edge in G.
+        
+        Returns:
+            set: Edges in P not included in the mapping
+        """
+        visited_edges_keys = set(self.visited_edges.keys())
+        visited_edges_keys = visited_edges_keys | {(v,u) for (u,v) in visited_edges_keys}
+        return set(self.P_edges) - set(visited_edges_keys)
+
     
     def get_mapping(self):
         """

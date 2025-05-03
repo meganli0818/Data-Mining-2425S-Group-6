@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 
-class UllmanAlgorithm:
+class UllmanAlgorithmEdge:
     """
     Implementation of Ullman's Subgraph Isomorphism Algorithm.
     
@@ -31,8 +31,6 @@ class UllmanAlgorithm:
         Raises:
             ValueError: If P has more edges or vertices than G
         """
-        if len(P.nodes()) > len(G.nodes()):
-            raise ValueError("P cannot be larger than G")
             
         # Store degree information for each vertex
         self.P_dictionary_by_vertex = dict(P.degree())
@@ -151,12 +149,12 @@ class UllmanAlgorithm:
         """
         if len(self.adj_list_P) == 0:
             return True
-        first_vertex = next(iter(sorted(self.adj_list_P.keys())))
+        first_edge = next(iter(sorted(self.P_edges)))
         if exact_match:
             candidate_mapping_matrix = self.exact_candidate_mappings()
         else:
             candidate_mapping_matrix = self.candidate_mappings()
-        return self.recursive_ullman(first_vertex, candidate_mapping_matrix, start=True)
+        return self.recursive_ullman(first_edge, candidate_mapping_matrix, start=True)
 
     def recursive_ullman(self, e, candidate_mapping_matrix, start=False):
         """
@@ -229,7 +227,7 @@ class UllmanAlgorithm:
                     
                      # match v too
                     v_possible_matches = set(np.where(candidate_mapping_matrix[v_idx])[0])
-                    v_possible_matches = v_possible_matches & {self.p_node_to_index[neighbor] for neighbor in a_neighbors}
+                    v_possible_matches = v_possible_matches & {self.g_node_to_index[neighbor] for neighbor in a_neighbors}
                     
                     for b_idx in v_possible_matches:
                         b = self.g_index_to_node[b_idx]
@@ -311,7 +309,7 @@ class UllmanAlgorithm:
                         
                         # Add current mapping
                         self.visited_nodes[u] = a
-                        self.visited_edges[e] = (a,self.g_index_to_node[self.visited_nodes[v]])
+                        self.visited_edges[e] = (a,self.visited_nodes[v])
                         
                         # Choose next vertex to match (prioritize neighbors)
                         if unvisited_neighboring_edges:
@@ -358,7 +356,7 @@ class UllmanAlgorithm:
                         
                         # Add current mapping
                         self.visited_nodes[v] = b
-                        self.visited_edges[e] = (self.g_index_to_node[self.visited_nodes[u]], b)
+                        self.visited_edges[e] = (self.visited_nodes[u], b)
                         
                         # Choose next vertex to match (prioritize neighbors)
                         if unvisited_neighboring_edges:

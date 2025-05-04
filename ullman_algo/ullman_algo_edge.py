@@ -305,10 +305,11 @@ class UllmanAlgorithmEdge:
                                 if self.recursive_ullman(next_edge, candidate_copy):
                                     return True
                     
-                    # Remove mapping if this branch fails (backtrack)
-                    del self.visited_edges[e]
-                    del self.visited_nodes[u]
-                    del self.visited_nodes[v]
+                            # Remove mapping if this branch fails (backtrack)
+                            del self.visited_edges[e]
+                            del self.visited_nodes[v]
+                            del self.visited_nodes[u]
+                    
 
                     if start:
                         self.failure_count += 1
@@ -354,9 +355,9 @@ class UllmanAlgorithmEdge:
                             if self.recursive_ullman(next_edge, candidate_copy):
                                 return True
                 
-                # Remove mapping if this branch fails (backtrack)
-                del self.visited_edges[e]
-                del self.visited_nodes[u]
+                        # Remove mapping if this branch fails (backtrack)
+                        del self.visited_edges[e]
+                        del self.visited_nodes[u]
 
                 if start:
                     self.failure_count += 1
@@ -401,9 +402,9 @@ class UllmanAlgorithmEdge:
                             if self.recursive_ullman(next_edge, candidate_copy):
                                 return True
                 
-                # Remove mapping if this branch fails (backtrack)
-                del self.visited_edges[e]
-                del self.visited_nodes[v]
+                        # Remove mapping if this branch fails (backtrack)
+                        del self.visited_edges[e]
+                        del self.visited_nodes[v]
 
                 if start:
                     self.failure_count += 1

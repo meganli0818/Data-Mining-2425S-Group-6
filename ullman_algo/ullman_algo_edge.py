@@ -126,7 +126,7 @@ class UllmanAlgorithmEdge:
         Returns:
             set: Vertices in G not included in the mapping
         """
-        return set(self.G_vertices) - set(self.visited.values())
+        return set(self.G_vertices) - set(self.visited_nodes.values())
     
     def get_unmapped_vertices_in_P(self):
         """
@@ -135,7 +135,7 @@ class UllmanAlgorithmEdge:
         Returns:
             set: Vertices in G not included in the mapping
         """
-        return set(self.P_vertices) - set(self.visited.keys())
+        return set(self.P_vertices) - set(self.visited_nodes.keys())
 
     def get_unmapped_edges_in_G(self):
         """
@@ -168,7 +168,7 @@ class UllmanAlgorithmEdge:
         Returns:
             dict: Mapping of vertices in P to vertices in G
         """
-        return self.visited
+        return self.visited_nodes
 
     def ullman(self, exact_match):
         """

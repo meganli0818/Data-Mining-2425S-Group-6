@@ -1,6 +1,7 @@
 import networkx as nx
 from ullman_algo_edge import UllmanAlgorithmEdge
 import math
+import sys
 
 # Debug flag to control output verbosity
 DEBUG = True  # Set to False for production mode
@@ -45,22 +46,28 @@ def edge_based_merge(G, P):
 
         # Check if the remaining "root" size k-1 P-graph is a subgraph of G.
         # If it is, we can merge the two graphs.
+        print(iso.ullman(False))
         if iso.ullman(False):
             unmapped_edges_g = iso.get_unmapped_edges_in_G()
             G_rem = nx.Graph(G)
             for unmapped_edge_g in unmapped_edges_g:
                 G_rem.remove_edge(*unmapped_edge_g)
-            print((unmapped_edges_g))
+
             exact_match = UllmanAlgorithmEdge(G_rem, P_rem)
-            print("G nodes:", list(G_rem.nodes(data=True)))
-            print("G edges:", list(G_rem.edges(data=True)))
-            print("P nodes:", list(P_rem.nodes(data=True)))
-            print("P edges:", list(P_rem.edges(data=True)))
+            
+           
             if exact_match.ullman(True):
+
                 unmapped_p_nodes = iso.get_unmapped_vertices_in_P()
                 unmapped_g_nodes = iso.get_unmapped_vertices_in_G()
+                print(list(unmapped_p_nodes))
+                for unmapped_node in unmapped_p_nodes:
+                    print(P.nodes[unmapped_node]['label'])
+                print(list(unmapped_g_nodes))
+                for unmapped_node in unmapped_p_nodes:
+                    print(G.nodes[unmapped_node]['label'])
                 
-                unmapped_edges_p = iso.get_unmapped_edges_in_P()
+                unmapped_edge_p = (u_p, v_p)
 
                 # /----- Create new merged graph using G as base -----/
                 merged_graph = nx.Graph(G)
@@ -68,36 +75,48 @@ def edge_based_merge(G, P):
                 # The case where P (to be added to G) does not have an unmapped node
                 # // Weird nx behavior about implicitly adding any nodes that don’t already exist when defining edges
                 if(len(unmapped_p_nodes) == 0):
-                    for unmapped_edge_p in unmapped_edges_p:
-                        merged_graph.add_edge(*unmapped_edge_p)
-                        merged_results.append(merged_graph)
+                    merged_graph.add_edge(*unmapped_edge_p)
+                    merged_results.append(merged_graph)
+                    return merged_results
 
                 # Using vertex mapping dictionary:
                 # 1. Find mapping of u, v to G
                 # 2. If these do not map to anything in G, we create new nodes.
                 # 3. Then, we add define the edge between new node and merged graph.
-                for unmapped_edge_p in unmapped_edges_p:
-                    u, v = unmapped_edge_p
-                    mapping = iso.get_mapping()
+                
 
-                    if any(node not in mapping for node in (u, v)): 
-                        # /--- Candidate 1 ---/
-                        # If P_node is missing in G, create node and add to merged graph
-                        for unmapped_node_p in unmapped_p_nodes:
-                            new_node = unmapped_node_p
-                            merged_graph.add_node(new_node)
-                            existing_node = u if u in mapping else v
-                            merged_graph.add_edge(new_node, mapping[existing_node])
+                mapping = iso.get_mapping()
+
+                if any(node not in mapping for node in (u_p, v_p)): 
+                    print(f"Up {u_p}")
+                    print(f"Vp {v_p}")
+                    # /--- Candidate 1 ---/
+                    # If P_node is missing in G, create node and add to merged graph
+                    for unmapped_node_p in unmapped_p_nodes:
+                       
+                    
+                        new_node = max(G.nodes()) + 1 if G.nodes() else 1
+                        merged_graph.add_node(new_node, label=P.nodes[unmapped_node_p]['label'])
+                      
+                        existing_node = u_p if u_p in mapping else v_p
                         
-                        # /--- Candidate 2 ---/
-                        # Check if unmapped node p and unmapped node g are equal 
-                            for unmapped_node_g in unmapped_g_nodes:
-                                if G.nodes[unmapped_node_p]['label'] == G.nodes[unmapped_node_g]['label']: 
-                                    merged_graph2 = nx.Graph(G)
-                                    merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
+                        merged_graph.add_edge(new_node, mapping[existing_node])
+                        
                         merged_results.append(merged_graph)
-                        merged_results.append(merged_graph2)
-    return merged_results
+                    
+                    # /--- Candidate 2 ---/
+                    # Check if unmapped node p and unmapped node g are equal 
+
+                        for unmapped_node_g in unmapped_g_nodes:
+
+                            if merged_graph.nodes[new_node]['label'] == G.nodes[unmapped_node_g]['label'] and not G.has_edge(unmapped_node_g, mapping[existing_node]): 
+                                merged_graph2 = nx.Graph(G)
+                                merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
+                                merged_results.append(merged_graph2)
+                                return merged_results
+                    return merged_results
+
+
 
 
 def k1_join(G, P):
@@ -169,6 +188,10 @@ def generate_candidates(freq_subgraphs):
         
                 # Check if each candidate is already generated.
                 for new_candidate in new_candidates:
+                    if new_candidate.number_of_edges() <= freq_subgraphs_list[i].number_of_edges() or new_candidate.number_of_edges() <= freq_subgraphs_list[j].number_of_edges():
+                        print_graph_nodes_simple([new_candidate, freq_subgraphs_list[i], freq_subgraphs_list[j]])
+                        print("ERROR")
+                        sys.exit(1)
                     candidate_already_generated = False
                     for existing_candidate in candidates:
                         ullman_exact = UllmanAlgorithmEdge(existing_candidate, new_candidate)
@@ -353,6 +376,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
         print("pruned candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
         print("number of candidates: ", len(candidates))
 
+        
         print(f"size of K : {curr_freq_subgraphs[0].number_of_edges() + 1}")
         print(f"size of curr_freq_subgraph : {len(curr_freq_subgraphs)}")
 
@@ -363,6 +387,13 @@ def apriori(graph_dataset, min_freq, verbose=None):
         for graph in graph_dataset:
             inner_counter = 1
             for candidate in candidates:
+                if(curr_freq_subgraphs[0].number_of_edges() >= candidate.number_of_edges()):
+                    print("ERROR! candidate has less edges than before")
+                    print("candidate: ")
+                    print_graph_nodes_simple([candidate])
+                    print("old graph")
+                    print_graph_nodes_simple([curr_freq_subgraphs[0]])
+                    sys.exit(1)
                 if candidate.number_of_edges() <= graph.number_of_edges():
                     ullman = UllmanAlgorithmEdge(graph, candidate)
                     print(f"\rChecked candidate {inner_counter}/{len(candidates)} with graph {counter}/{len(graph_dataset)}    ", end="")
@@ -423,6 +454,6 @@ def print_graph_nodes_simple(graph_list, debug_only=True):
             print(f"Node {node}:{label} ", end="")
         print()  # New line after each graph
 
-        print("  Edges: ", len(graph.edges()))
+        print("  Edges: ", graph.edges())
 
     print("\n")

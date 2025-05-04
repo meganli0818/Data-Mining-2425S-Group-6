@@ -58,10 +58,10 @@ def edge_based_merge(G, P):
                 unmapped_g_nodes = iso.get_unmapped_vertices_in_G()
                 print(list(unmapped_p_nodes))
                 for unmapped_node in unmapped_p_nodes:
-                    print(P.nodes[unmapped_node]['label'])
+                    print(f" P NODESSS: {P.nodes[unmapped_node]['label']}")
                 print(list(unmapped_g_nodes))
                 for unmapped_node in unmapped_p_nodes:
-                    print(G.nodes[unmapped_node]['label'])
+                    print(F"G NODESSS : {G.nodes[unmapped_node]['label']}")
                 
                 unmapped_edge_p = (u_p, v_p)
 
@@ -73,7 +73,7 @@ def edge_based_merge(G, P):
                 if(len(unmapped_p_nodes) == 0):
                     merged_graph.add_edge(*unmapped_edge_p)
                     merged_results.append(merged_graph)
-                    return merged_results
+                    print("RETURNED 1")
 
                 # Using vertex mapping dictionary:
                 # 1. Find mapping of u, v to G
@@ -84,12 +84,14 @@ def edge_based_merge(G, P):
                 mapping = iso.get_mapping()
 
                 if any(node not in mapping for node in (u_p, v_p)): 
+                    print("CANDIDATE 1 TIME")
                     print(f"Up {u_p}")
                     print(f"Vp {v_p}")
                     # /--- Candidate 1 ---/
                     # If P_node is missing in G, create node and add to merged graph
+                    
                     for unmapped_node_p in unmapped_p_nodes:
-                        print("MY ASS IS RUNNING TWICE")
+                        
                         print("M nodes:", list(merged_graph.nodes(data=True)))
                         print("M edges:", list(merged_graph.edges(data=True)))
                     
@@ -117,6 +119,7 @@ def edge_based_merge(G, P):
                                 merged_results.append(merged_graph2)
                                 return merged_results
                     return merged_results
+                return merged_results
 
 
 
@@ -163,16 +166,18 @@ def k1_join(G, P):
 
 def main():
     G = nx.Graph()
-    G.add_node(0, label='5')
-    G.add_node(1, label='6')
+    G.add_node(0, label='2')
+    G.add_node(1, label='5')
     G.add_node(2, label='2')
-    G.add_edges_from([(0, 1), (0,2)])
+    G.add_node(3, label='6')
+    G.add_edges_from([(0, 1), (0,2), (1,3)])
 
     P = nx.Graph()
-    P.add_node(0, label='5')
-    P.add_node(1, label='6')
+    P.add_node(0, label='2')
+    P.add_node(1, label='5')
     P.add_node(2, label='2')
-    P.add_edges_from([(0, 1), (0,2)])
+    P.add_node(3, label='6')
+    P.add_edges_from([(0, 1), (0,2), (1,3)])
 
     print("\n--- Input Graphs ---")
     print("G nodes:", list(G.nodes(data=True)))
@@ -193,4 +198,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

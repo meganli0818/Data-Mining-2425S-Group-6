@@ -263,23 +263,32 @@ def apriori(graph_dataset, min_freq, verbose=None):
     # Generate all singletons
     singletons = all_singletons(graph_dataset)
     curr_freq_subgraphs = []
+    i = 1
     for singleton in singletons:
+        print(f"\rGenerating singletons {i}/{len(singletons)}...", end="")
         # Count support for each singleton
         candidate_supp = {}
         for graph in graph_dataset:
             if singleton.number_of_nodes() <= graph.number_of_nodes():
-                ullman = UllmanAlgorithm(graph, singleton)
-                if ullman.ullman(False):
-                    if singleton not in candidate_supp:
-                        candidate_supp[singleton] = 1
-                    else:
-                        candidate_supp[singleton] += 1
+                    # Get the first node from singleton (which is always 0) and its label
+                    first_node = next(iter(singleton.nodes()))
+                    singleton_label = singleton.nodes[first_node]['label']
+                    
+                    # Check if any node in the graph has the same label
+                    if any(graph.nodes[node].get('label') == singleton_label for node in graph.nodes()):
+                        if singleton not in candidate_supp:
+                            candidate_supp[singleton] = 1
+                        else:
+                            candidate_supp[singleton] += 1
+
+        i += 1
         # Save singletons based on minimum support
         for candidate, supp in candidate_supp.items():
             if supp >= min_support:
                 curr_freq_subgraphs.append(candidate)
     
-    debug_print("number of frequent singletons: ", len(curr_freq_subgraphs))
+    print("number of frequent singletons: ", len(curr_freq_subgraphs))
+    print("\n")
     debug_print("frequent singletons ")
     print_graph_nodes_simple(curr_freq_subgraphs)
 

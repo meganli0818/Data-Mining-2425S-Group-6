@@ -24,17 +24,34 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
     
+    test_apriori(graphs)
+    
+def test_apriori(graphs):
+
+    frequent_count = []
+    time_count = []
+    
     # Measure execution time of the Apriori algorithm
-    start_time = time.time()
-    apriori = Apriori_Node.apriori(graphs, 0.3)  # Run with 80% support threshold
-    end_time = time.time()
+    for i in range(1, 5, 1):
+        start_time = time.time()
+        apriori = Apriori_Node.apriori(graphs, i*0.1)  # Run with 80% support threshold
+        end_time = time.time()
 
-    print("Time taken for apriori in seconds:", end_time - start_time)
-    print("Number of frequent subgraphs:", len(apriori))
+        time_count.append(end_time - start_time)
+        frequent_count.append(len(apriori))
 
-    plt.show()  # Display any plotted graphs
+         # Write time data to file
+    with open("time_data.txt", "w") as time_file:
+        for time_value in time_count:
+            time_file.write(f"{time_value}\n")
+    
+    # Write graph count data to file
+    with open("graph_data.txt", "w") as graph_file:
+        for count in frequent_count:
+            graph_file.write(f"{count}\n")
     
     
+
 def graph_reader(graph_data):
     """
     Parse a text file containing graph data in a specific format

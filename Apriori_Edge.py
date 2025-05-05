@@ -1,5 +1,5 @@
 import networkx as nx
-from ullman_algo import UllmanAlgorithmEdge
+from ullman_algo.ullman_algo_edge import UllmanAlgorithmEdge
 import math
 import sys
 
@@ -254,7 +254,7 @@ def prune(candidates, freq_subgraphs):
     return pruned_candidates
 
 
-def all_single_edge_graphs(graph_dataset):
+def all_single_edge_graphs(graph_dataset, frequent_singletons):
     """
     Generates all single-edge graphs from a dataset of graphs.
 
@@ -276,6 +276,8 @@ def all_single_edge_graphs(graph_dataset):
             label_u = graph.nodes[u].get('label')
             label_v = graph.nodes[v].get('label')
             if label_u is None or label_v is None:
+                continue
+            if label_u not in frequent_singletons or label_v not in frequent_singletons:
                 continue
             pair = tuple(sorted((label_u, label_v)))
             unique_edge_labels.add(pair)
@@ -369,6 +371,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
     # Generate all singletons
     singletons = all_singletons(graph_dataset)
     curr_freq_subgraphs = []
+    frequent_labels = []
     i = 1
     for singleton in singletons:
         candidate_supp = 0
@@ -377,6 +380,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
         for graph in graph_dataset:
             if candidate_supp >= min_support:
                 curr_freq_subgraphs.append(singleton)
+                frequent_labels.append(singleton.nodes[0]['label'])
                 break
             if singleton.number_of_nodes() <= graph.number_of_nodes():
                     # Get the first node from singleton (which is always 0) and its label
@@ -394,8 +398,11 @@ def apriori(graph_dataset, min_freq, verbose=None):
     debug_print("frequent singletons ")
     print_graph_nodes_simple(curr_freq_subgraphs)
 
-    single_edge_graphs = all_single_edge_graphs(graph_dataset)
+    i=1
+    single_edge_graphs = all_single_edge_graphs(graph_dataset, frequent_labels)
     for single_edge_graph in single_edge_graphs:
+        print(f"\rGenerating singletons {i}/{len(single_edge_graphs)}...", end="")
+        i += 1
         # Count support for each singleton
         candidate_supp = {}
         for graph in graph_dataset:

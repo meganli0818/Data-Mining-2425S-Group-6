@@ -32,7 +32,7 @@ def test_apriori(graphs):
     time_count = []
     
     # Measure execution time of the Apriori algorithm
-    for i in range(1, 5, 1):
+    for i in range(3, 4, 1):
         start_time = time.time()
         apriori = Apriori_Node.apriori(graphs, i*0.1)  # Run with 80% support threshold
         end_time = time.time()

@@ -330,6 +330,8 @@ def apriori(graph_dataset, min_freq, verbose=None):
 
         print("number of candidates: ", len(curr_freq_subgraphs))
         print()
+
+    print_graph_nodes_simple(freq_subgraphs, debug_only=False)
     
     
     # Restore original DEBUG value

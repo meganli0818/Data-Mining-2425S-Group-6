@@ -296,13 +296,12 @@ def apriori(graph_dataset, min_freq, verbose=None):
         freq_subgraphs.extend(curr_freq_subgraphs)
         unpruned_candidates = generate_candidates(curr_freq_subgraphs)
         print("generated candidates of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        debug_print("generated candidates: ")
-        print_graph_nodes_simple(unpruned_candidates)
+        print("generated candidates: ", len(unpruned_candidates))
+        print_graph_nodes_simple(unpruned_candidates, debug_only=False)
 
         # Prune candidates
         candidates = prune(unpruned_candidates, curr_freq_subgraphs)
-        print("pruned candidates of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        print("number of candidates: ", len(candidates))
+        print("pruned candidates:", len(candidates))
 
         # Count support for each candidate
         candidate_supp = {}
@@ -369,6 +368,6 @@ def print_graph_nodes_simple(graph_list, debug_only=True):
             print(f"Node {node}:{label} ", end="")
         print()  # New line after each graph
 
-        print("  Edges: ", len(graph.edges()))
+        print("  Edges: ", graph.edges())
 
     print("\n")

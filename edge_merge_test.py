@@ -24,12 +24,13 @@ def edge_based_merge(G, P):
         return []
     
     if G.number_of_edges() == 1 and P.number_of_edges() == 1: # K=1 Case
+        print("[DEBUG] K==1 CASE ENTERED")
         return k1_join(G, P)
 
     merged_results = []
 
     # Loop through all edges in P, removing one at a time.
-    for u_p, v_p in P.edges():
+    for u_p, v_p in sorted(P.edges()):
         P_rem = nx.Graph(P)
         P_rem.remove_edge(u_p,v_p)
         iso = UllmanAlgorithmEdge(G, P_rem)
@@ -40,86 +41,53 @@ def edge_based_merge(G, P):
         if iso.ullman(False):
             unmapped_edges_g = iso.get_unmapped_edges_in_G()
             G_rem = nx.Graph(G)
-            for unmapped_edge_g in unmapped_edges_g:
+            for unmapped_edge_g in sorted(unmapped_edges_g):
                 G_rem.remove_edge(*unmapped_edge_g)
-            print(f"UNMAPPED EGES G:  {(unmapped_edges_g)}")
+
             exact_match = UllmanAlgorithmEdge(G_rem, P_rem)
-            print("G rem nodes:", list(G_rem.nodes(data=True)))
-            print("G rem edges:", list(G_rem.edges(data=True)))
-            print("P rem nodes:", list(P_rem.nodes(data=True)))
-            print("P rem edges:", list(P_rem.edges(data=True)))
-            print("\n")
-            
-            print(f"EXACT MATCH {exact_match.ullman(True)}")
-            print("\n")
+          
             if exact_match.ullman(True):
 
                 unmapped_p_nodes = iso.get_unmapped_vertices_in_P()
                 unmapped_g_nodes = iso.get_unmapped_vertices_in_G()
-                print(list(unmapped_p_nodes))
-                for unmapped_node in unmapped_p_nodes:
-                    print(f" P NODESSS: {P.nodes[unmapped_node]['label']}")
-                print(list(unmapped_g_nodes))
-                for unmapped_node in unmapped_p_nodes:
-                    print(F"G NODESSS : {G.nodes[unmapped_node]['label']}")
+
+            
+                mapping = iso.get_mapping()
                 
                 unmapped_edge_p = (u_p, v_p)
-
-                # /----- Create new merged graph using G as base -----/
                 merged_graph = nx.Graph(G)
+            
+                if (node not in mapping for node in (u_p, v_p)):
 
-                # The case where P (to be added to G) does not have an unmapped node
-                # // Weird nx behavior about implicitly adding any nodes that don’t already exist when defining edges
-                if(len(unmapped_p_nodes) == 0):
-                    merged_graph.add_edge(*unmapped_edge_p)
+                    if (u_p in mapping):
+                        existing_node_p = u_p
+                        unmapped_node_p = v_p
+                    else:
+                        existing_node_p = v_p
+                        unmapped_node_p = u_p
+                    new_node = max(G.nodes()) + 1 if G.nodes() else 1
+                    merged_graph.add_node(new_node, label=P.nodes[unmapped_node_p]['label'])
+                    existing_node = u_p if u_p in mapping else v_p
+                    merged_graph.add_edge(new_node, mapping[existing_node_p])
                     merged_results.append(merged_graph)
-                    print("RETURNED 1")
-
-                # Using vertex mapping dictionary:
-                # 1. Find mapping of u, v to G
-                # 2. If these do not map to anything in G, we create new nodes.
-                # 3. Then, we add define the edge between new node and merged graph.
-                
-
-                mapping = iso.get_mapping()
-
-                if any(node not in mapping for node in (u_p, v_p)): 
-                    print("CANDIDATE 1 TIME")
-                    print(f"Up {u_p}")
-                    print(f"Vp {v_p}")
-                    # /--- Candidate 1 ---/
-                    # If P_node is missing in G, create node and add to merged graph
-                    
-                    for unmapped_node_p in unmapped_p_nodes:
-                        
-                        print("M nodes:", list(merged_graph.nodes(data=True)))
-                        print("M edges:", list(merged_graph.edges(data=True)))
-                    
-                        new_node = max(G.nodes()) + 1 if G.nodes() else 1
-                        merged_graph.add_node(new_node, label=P.nodes[unmapped_node_p]['label'])
-                        print("M nodes after add :", list(merged_graph.nodes(data=True)))
-                        print("M edges:", list(merged_graph.edges(data=True)))
-                        print(f"LABEL OF NEW NODE {merged_graph.nodes[new_node]['label']}")
-                        existing_node = u_p if u_p in mapping else v_p
-                        print(merged_graph.nodes[existing_node]['label'])
-                        print(merged_graph.edges)
-                        merged_graph.add_edge(new_node, mapping[existing_node])
-                        print(merged_graph.edges)
-                        print(f"MAPPING {merged_graph.nodes[mapping[existing_node]]['label']}")
+                else:
+      
+                    #p doesnt havae unmapped node
+                    if not merged_graph.has_edge(mapping[u_p], mapping[v_p]):
+                        merged_graph.add_edge(mapping[u_p], mapping[v_p])
                         merged_results.append(merged_graph)
-                    
-                    # /--- Candidate 2 ---/
-                    # Check if unmapped node p and unmapped node g are equal 
 
-                        for unmapped_node_g in unmapped_g_nodes:
-
-                            if merged_graph.nodes[new_node]['label'] == G.nodes[unmapped_node_g]['label'] and not G.has_edge(unmapped_node_g, mapping[existing_node]): 
-                                merged_graph2 = nx.Graph(G)
-                                merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
-                                merged_results.append(merged_graph2)
-                                return merged_results
-                    return merged_results
+   
+                    unmapped_node_g = next(iter(sorted(unmapped_g_nodes)))
+                    if merged_graph.nodes[new_node]['label'] == G.nodes[unmapped_node_g]['label'] and not G.has_edge(unmapped_node_g, mapping[existing_node]): 
+                        merged_graph2 = nx.Graph(G)
+                        merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
+                        merged_results.append(merged_graph2)
+                        return merged_results
                 return merged_results
+            
+
+    return merged_results
 
 
 
@@ -138,8 +106,9 @@ def k1_join(G, P):
     labels_G = nx.get_node_attributes(G, 'label')
     labels_P = nx.get_node_attributes(P, 'label')
 
-    shared_labels = set(labels_G.values()) & set(labels_P.values()) # Get intersection of node with the same labels
-    if len(shared_labels) != 1:
+    shared_labels = sorted(set((labels_G.values())) & set((labels_P.values()))) # Get intersection of node with the same labels
+    print(list(shared_labels))
+    if len(shared_labels) < 1:
         return merged_results
     label = shared_labels.pop()
 
@@ -166,18 +135,16 @@ def k1_join(G, P):
 
 def main():
     G = nx.Graph()
-    G.add_node(0, label='2')
+    G.add_node(0, label='6')
     G.add_node(1, label='5')
     G.add_node(2, label='2')
-    G.add_node(3, label='6')
-    G.add_edges_from([(0, 1), (0,2), (1,3)])
+    G.add_edges_from([(0, 1), (1,2)])
 
     P = nx.Graph()
-    P.add_node(0, label='2')
+    P.add_node(0, label='6')
     P.add_node(1, label='5')
     P.add_node(2, label='2')
-    P.add_node(3, label='6')
-    P.add_edges_from([(0, 1), (0,2), (1,3)])
+    P.add_edges_from([(0, 1), (1,2)])
 
     print("\n--- Input Graphs ---")
     print("G nodes:", list(G.nodes(data=True)))

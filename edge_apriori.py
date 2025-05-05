@@ -4,7 +4,7 @@ import math
 import sys
 
 # Debug flag to control output verbosity
-DEBUG = False  # Set to False for production mode
+DEBUG = True  # Set to False for production mode
 
 
 def debug_print(*args, **kwargs):
@@ -46,7 +46,7 @@ def edge_based_merge(G, P):
 
         # Check if the remaining "root" size k-1 P-graph is a subgraph of G.
         # If it is, we can merge the two graphs.
-        print(iso.ullman(False))
+
         if iso.ullman(False):
             unmapped_edges_g = iso.get_unmapped_edges_in_G()
             G_rem = nx.Graph(G)
@@ -56,14 +56,15 @@ def edge_based_merge(G, P):
             exact_match = UllmanAlgorithmEdge(G_rem, P_rem)
           
             if exact_match.ullman(True):
+                unmapped_g_nodes = sorted(iso.get_unmapped_vertices_in_G())
+                # print(f"GRAPHS TO COMBINE FOR SIZE :  {G.number_of_edges()}")
+                # list = [P, G]
+                # print_graph_nodes_simple(list)
 
-                unmapped_p_nodes = iso.get_unmapped_vertices_in_P()
-                unmapped_g_nodes = iso.get_unmapped_vertices_in_G()
 
             
                 mapping = iso.get_mapping()
                 
-                unmapped_edge_p = (u_p, v_p)
                 merged_graph = nx.Graph(G)
             
                 if (node not in mapping for node in (u_p, v_p)):
@@ -116,8 +117,8 @@ def k1_join(G, P):
     labels_G = nx.get_node_attributes(G, 'label')
     labels_P = nx.get_node_attributes(P, 'label')
 
-    shared_labels = set(labels_G.values()) & set(labels_P.values()) # Get intersection of node with the same labels
-    if len(shared_labels) != 1:
+    shared_labels = sorted(set((labels_G.values())) & set((labels_P.values()))) # Get intersection of node with the same labels
+    if len(shared_labels) < 1:
         return merged_results
     label = shared_labels.pop()
 
@@ -167,7 +168,6 @@ def generate_candidates(freq_subgraphs):
         for j in range(i, len(freq_subgraphs_list)):
             new_candidates = edge_based_merge(freq_subgraphs_list[i], freq_subgraphs_list[j])
             if new_candidates is not None:
-        
                 # Check if each candidate is already generated.
                 for new_candidate in new_candidates:
                     if new_candidate.number_of_edges() <= freq_subgraphs_list[i].number_of_edges() or new_candidate.number_of_edges() <= freq_subgraphs_list[j].number_of_edges():
@@ -465,11 +465,12 @@ def apriori(graph_dataset, min_freq, verbose=None):
         
         print("number of candidates: ", len(curr_freq_subgraphs))
         print()
+  
+    print_graph_nodes_simple(freq_subgraphs)
     
     
     # Restore original DEBUG value
     globals()['DEBUG'] = original_debug
-    
     return freq_subgraphs
 
 

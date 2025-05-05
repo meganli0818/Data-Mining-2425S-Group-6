@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from ullman_algo.ullman_algo_node import UllmanAlgorithmNode
+from ullman_algo.ullman_algo_edge import UllmanAlgorithmEdge
 import Apriori_Node
+import Apriori_Edge
 
 def main():
     """
@@ -32,9 +34,9 @@ def test_apriori(graphs):
     time_count = []
     
     # Measure execution time of the Apriori algorithm
-    for i in range(3, 4, 1):
+    for i in range(1, 10, 1):
         start_time = time.time()
-        apriori = Apriori_Node.apriori(graphs, i*0.1)  # Run with 80% support threshold
+        apriori = Apriori_Edge.apriori(graphs, i*0.1)  # Run with 80% support threshold
         end_time = time.time()
 
         time_count.append(end_time - start_time)

@@ -246,10 +246,10 @@ class UllmanAlgorithmEdge:
         # if both vertices are not matched, try matching both
         if u not in visited_nodes_keys and v not in visited_nodes_keys:
             # Get possible matches using matrix index
-            u_possible_matches = np.where(candidate_mapping_matrix[u_idx])[0]
+            u_possible_matches = sorted(np.where(candidate_mapping_matrix[u_idx])[0])
 
             # Try each possible match for vertex u
-            for a_idx in u_possible_matches:
+            for a_idx in sorted(u_possible_matches):
                 a = self.g_index_to_node[a_idx]
                 a_neighbors = set(self.adj_list_G[a])
                 
@@ -260,7 +260,7 @@ class UllmanAlgorithmEdge:
                     
                      # match v too
                     v_possible_matches = set(np.where(candidate_mapping_matrix[v_idx])[0])
-                    v_possible_matches = v_possible_matches & {self.g_node_to_index[neighbor] for neighbor in a_neighbors}
+                    v_possible_matches = sorted(list(v_possible_matches & {self.g_node_to_index[neighbor] for neighbor in a_neighbors}))
                     
                     for b_idx in v_possible_matches:
                         b = self.g_index_to_node[b_idx]
@@ -318,7 +318,7 @@ class UllmanAlgorithmEdge:
             
         elif u not in visited_nodes_keys:
             # Get possible matches using matrix index
-            u_possible_matches = np.where(candidate_mapping_matrix[u_idx])[0]
+            u_possible_matches = sorted(np.where(candidate_mapping_matrix[u_idx])[0])
 
             # Try each possible match for vertex u
             for a_idx in u_possible_matches:

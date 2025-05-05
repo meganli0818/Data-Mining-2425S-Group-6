@@ -264,11 +264,15 @@ def apriori(graph_dataset, min_freq, verbose=None):
     singletons = all_singletons(graph_dataset)
     curr_freq_subgraphs = []
     i = 1
+    
     for singleton in singletons:
+        candidate_supp = 0
         print(f"\rGenerating singletons {i}/{len(singletons)}...", end="")
         # Count support for each singleton
-        candidate_supp = {}
         for graph in graph_dataset:
+            if candidate_supp >= min_support:
+                curr_freq_subgraphs.append(singleton)
+                break
             if singleton.number_of_nodes() <= graph.number_of_nodes():
                     # Get the first node from singleton (which is always 0) and its label
                     first_node = next(iter(singleton.nodes()))
@@ -276,16 +280,9 @@ def apriori(graph_dataset, min_freq, verbose=None):
                     
                     # Check if any node in the graph has the same label
                     if any(graph.nodes[node].get('label') == singleton_label for node in graph.nodes()):
-                        if singleton not in candidate_supp:
-                            candidate_supp[singleton] = 1
-                        else:
-                            candidate_supp[singleton] += 1
+                        candidate_supp += 1
 
         i += 1
-        # Save singletons based on minimum support
-        for candidate, supp in candidate_supp.items():
-            if supp >= min_support:
-                curr_freq_subgraphs.append(candidate)
     
     print("number of frequent singletons: ", len(curr_freq_subgraphs))
     print("\n")

@@ -4,7 +4,7 @@ import math
 import sys
 
 # Debug flag to control output verbosity
-DEBUG = True  # Set to False for production mode
+DEBUG = False  # Set to False for production mode
 
 
 def debug_print(*args, **kwargs):
@@ -39,7 +39,7 @@ def edge_based_merge(G, P):
     merged_results = []
 
     # Loop through all edges in P, removing one at a time.
-    for u_p, v_p in P.edges():
+    for u_p, v_p in sorted(P.edges()):
         P_rem = nx.Graph(P)
         P_rem.remove_edge(u_p,v_p)
         iso = UllmanAlgorithmEdge(G, P_rem)
@@ -50,71 +50,53 @@ def edge_based_merge(G, P):
         if iso.ullman(False):
             unmapped_edges_g = iso.get_unmapped_edges_in_G()
             G_rem = nx.Graph(G)
-            for unmapped_edge_g in unmapped_edges_g:
+            for unmapped_edge_g in sorted(unmapped_edges_g):
                 G_rem.remove_edge(*unmapped_edge_g)
 
             exact_match = UllmanAlgorithmEdge(G_rem, P_rem)
-            
-           
+          
             if exact_match.ullman(True):
 
                 unmapped_p_nodes = iso.get_unmapped_vertices_in_P()
                 unmapped_g_nodes = iso.get_unmapped_vertices_in_G()
-                print(list(unmapped_p_nodes))
-                for unmapped_node in unmapped_p_nodes:
-                    print(P.nodes[unmapped_node]['label'])
-                print(list(unmapped_g_nodes))
-                for unmapped_node in unmapped_p_nodes:
-                    print(G.nodes[unmapped_node]['label'])
+
+            
+                mapping = iso.get_mapping()
                 
                 unmapped_edge_p = (u_p, v_p)
-
-                # /----- Create new merged graph using G as base -----/
                 merged_graph = nx.Graph(G)
+            
+                if (node not in mapping for node in (u_p, v_p)):
 
-                # The case where P (to be added to G) does not have an unmapped node
-                # // Weird nx behavior about implicitly adding any nodes that don’t already exist when defining edges
-                if(len(unmapped_p_nodes) == 0):
-                    merged_graph.add_edge(*unmapped_edge_p)
+                    if (u_p in mapping):
+                        existing_node_p = u_p
+                        unmapped_node_p = v_p
+                    else:
+                        existing_node_p = v_p
+                        unmapped_node_p = u_p
+                    new_node = max(G.nodes()) + 1 if G.nodes() else 1
+                    merged_graph.add_node(new_node, label=P.nodes[unmapped_node_p]['label'])
+                    existing_node = u_p if u_p in mapping else v_p
+                    merged_graph.add_edge(new_node, mapping[existing_node_p])
                     merged_results.append(merged_graph)
-                    return merged_results
-
-                # Using vertex mapping dictionary:
-                # 1. Find mapping of u, v to G
-                # 2. If these do not map to anything in G, we create new nodes.
-                # 3. Then, we add define the edge between new node and merged graph.
-                
-
-                mapping = iso.get_mapping()
-
-                if any(node not in mapping for node in (u_p, v_p)): 
-                    print(f"Up {u_p}")
-                    print(f"Vp {v_p}")
-                    # /--- Candidate 1 ---/
-                    # If P_node is missing in G, create node and add to merged graph
-                    for unmapped_node_p in unmapped_p_nodes:
-                       
-                    
-                        new_node = max(G.nodes()) + 1 if G.nodes() else 1
-                        merged_graph.add_node(new_node, label=P.nodes[unmapped_node_p]['label'])
-                      
-                        existing_node = u_p if u_p in mapping else v_p
-                        
-                        merged_graph.add_edge(new_node, mapping[existing_node])
-                        
+                else:
+      
+                    #p doesnt havae unmapped node
+                    if not merged_graph.has_edge(mapping[u_p], mapping[v_p]):
+                        merged_graph.add_edge(mapping[u_p], mapping[v_p])
                         merged_results.append(merged_graph)
-                    
-                    # /--- Candidate 2 ---/
-                    # Check if unmapped node p and unmapped node g are equal 
 
-                        for unmapped_node_g in unmapped_g_nodes:
+   
+                    unmapped_node_g = next(iter(sorted(unmapped_g_nodes)))
+                    if merged_graph.nodes[new_node]['label'] == G.nodes[unmapped_node_g]['label'] and not G.has_edge(unmapped_node_g, mapping[existing_node]): 
+                        merged_graph2 = nx.Graph(G)
+                        merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
+                        merged_results.append(merged_graph2)
+                        return merged_results
+                return merged_results
+            
 
-                            if merged_graph.nodes[new_node]['label'] == G.nodes[unmapped_node_g]['label'] and not G.has_edge(unmapped_node_g, mapping[existing_node]): 
-                                merged_graph2 = nx.Graph(G)
-                                merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
-                                merged_results.append(merged_graph2)
-                                return merged_results
-                    return merged_results
+    return merged_results
 
 
 
@@ -306,6 +288,46 @@ def all_single_edge_graphs(graph_dataset):
 
     return single_edge_graphs
 
+def all_singletons(graph_dataset):
+    """
+    Generates all singleton graphs from a dataset of graphs.
+
+    This function extracts unique node labels from the input graph dataset 
+    and creates singleton graphs (graphs with a single node) for each unique label.
+
+    Args:
+        graph_dataset (list): A list of NetworkX graph objects representing the dataset.
+
+    Returns:
+        list: A list of singleton graphs, where each graph contains a single node 
+              with a unique label.
+
+    Notes:
+        - If a graph in the dataset does not have labeled nodes, those nodes will 
+          not contribute to the singleton graphs.
+    """
+    unique_labels = set()
+    singletons = []
+    
+    for graph in graph_dataset:
+        # Get all labels for the current graph
+        labels = nx.get_node_attributes(graph, 'label').values()
+        
+        # Add them to the set of unique labels
+        unique_labels.update(labels)
+    
+    debug_print("labels found: ", unique_labels)
+    
+    for label in unique_labels:
+        # Create a singleton graph for each unique label
+        singleton_graph = nx.Graph()
+        singleton_graph.add_node(0, label=label)
+        
+        # Add the singleton graph to the set of singletons
+        singletons.append(singleton_graph)
+
+    return singletons
+
 
 def apriori(graph_dataset, min_freq, verbose=None):
     """
@@ -339,8 +361,34 @@ def apriori(graph_dataset, min_freq, verbose=None):
     freq_subgraphs = []
 
     # Generate all singletons
-    single_edge_graphs = all_single_edge_graphs(graph_dataset)
+    singletons = all_singletons(graph_dataset)
     curr_freq_subgraphs = []
+    i = 1
+    for singleton in singletons:
+        candidate_supp = 0
+        print(f"\rGenerating singletons {i}/{len(singletons)}...", end="")
+        # Count support for each singleton
+        for graph in graph_dataset:
+            if candidate_supp >= min_support:
+                curr_freq_subgraphs.append(singleton)
+                break
+            if singleton.number_of_nodes() <= graph.number_of_nodes():
+                    # Get the first node from singleton (which is always 0) and its label
+                    first_node = next(iter(singleton.nodes()))
+                    singleton_label = singleton.nodes[first_node]['label']
+                    
+                    # Check if any node in the graph has the same label
+                    if any(graph.nodes[node].get('label') == singleton_label for node in graph.nodes()):
+                        candidate_supp += 1
+
+        i += 1
+    
+    print("number of frequent singletons: ", len(curr_freq_subgraphs))
+    print("\n")
+    debug_print("frequent singletons ")
+    print_graph_nodes_simple(curr_freq_subgraphs)
+
+    single_edge_graphs = all_single_edge_graphs(graph_dataset)
     for single_edge_graph in single_edge_graphs:
         # Count support for each singleton
         candidate_supp = {}
@@ -356,6 +404,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
         for candidate, supp in candidate_supp.items():
             if supp >= min_support:
                 curr_freq_subgraphs.append(candidate)
+    
     
     debug_print("number of frequent single-edge graphs: ", len(curr_freq_subgraphs))
     debug_print("frequent single edge graphs ")

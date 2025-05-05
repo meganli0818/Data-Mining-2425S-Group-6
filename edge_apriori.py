@@ -4,7 +4,7 @@ import math
 import sys
 
 # Debug flag to control output verbosity
-DEBUG = True  # Set to False for production mode
+DEBUG = False  # Set to False for production mode
 
 
 def debug_print(*args, **kwargs):
@@ -406,11 +406,9 @@ def apriori(graph_dataset, min_freq, verbose=None):
                         candidate_supp[single_edge_graph] = 1
                     else:
                         candidate_supp[single_edge_graph] += 1
-        # Save singletons based on minimum support
-        for candidate, supp in candidate_supp.items():
-            if supp >= min_support:
-                curr_freq_subgraphs.append(candidate)
-    
+                    if candidate_supp[single_edge_graph] >= min_support:
+                        curr_freq_subgraphs.append(single_edge_graph)
+                        break
     
     debug_print("number of frequent single-edge graphs: ", len(curr_freq_subgraphs))
     debug_print("frequent single edge graphs ")
@@ -439,9 +437,9 @@ def apriori(graph_dataset, min_freq, verbose=None):
         # Count support for each candidate
         candidate_supp = {}
         counter = 1
-        for graph in graph_dataset:
+        for candidate in candidates:
             inner_counter = 1
-            for candidate in candidates:
+            for graph in graph_dataset:
                 if(curr_freq_subgraphs[0].number_of_edges() >= candidate.number_of_edges()):
                     print("ERROR! candidate has less edges than before")
                     print("candidate: ")
@@ -451,12 +449,15 @@ def apriori(graph_dataset, min_freq, verbose=None):
                     sys.exit(1)
                 if candidate.number_of_edges() <= graph.number_of_edges():
                     ullman = UllmanAlgorithmEdge(graph, candidate)
-                    print(f"\rChecked candidate {inner_counter}/{len(candidates)} with graph {counter}/{len(graph_dataset)}    ", end="")
+                    print(f"\rChecked candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
                     if ullman.ullman(False):
                         if candidate not in candidate_supp:
                             candidate_supp[candidate] = 1
                         else:
                             candidate_supp[candidate] += 1
+                        if candidate_supp[candidate] >= min_support:
+                            curr_freq_subgraphs.append(candidate)
+                            break
                 inner_counter += 1
             counter += 1
         
@@ -515,6 +516,8 @@ def print_graph_nodes_simple(graph_list, debug_only=True):
     print("\n")
 
 def print_merge_graph(graph1, graph2, graph3):
+    if debug_print:
+        return 
     """
     Print the nodes of a single graph along with their labels.
     

@@ -1,65 +1,60 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
-from ullman_algo import UllmanAlgorithm
-import node_apriori
+from edge_apriori import apriori, print_graph_nodes_simple
 
 def main():
-    test_apriori()
 
     G = nx.Graph()
 
-    # try:
-    #     with open("./ullman_algo/test.txt") as f:
-    #         graph_data = f.readlines()
+    try:
+        with open("./mutag.txt") as f:
+            graph_data = f.readlines()
         
-    #     with open("./ullman_algo/Ptest.txt") as f:
-    #         P_data = f.readlines()
-    #     G = graph_reader(graph_data)
 
-    #     P = graph_reader(P_data)
+        G = graph_reader(graph_data)
+        print("done with processing graph")
+        aprior = apriori(G, 0.3)
 
-    #     print("done with processing graph")
-    # except FileNotFoundError:
-    #     print("Error: test.txt file not found")
-    # except Exception as e:
-    #     print(f"An error occurred: {e}")
-    
-    # try:
-    #     matcher = UllmanAlgorithm(G, P)
-    # except ValueError as e:
-    #     print(f"Error: {e}")
-    # if (matcher.ullman()):
-    #     print("P is a subgraph of G")
-    # else:
-    #     print("P is NOT a subgraph of G")
+        print("Number of frequent subgraphs: ", len(aprior))
 
-    # print(matcher.get_unmapped_vertices())
-    
 
-    # plt.figure(1)
-    # nx.draw(G, with_labels=True, node_color='lightblue', edge_color='gray')
-    # plt.title("Original Graph G")
-    
-    # # Create second figure for graph P
-    # plt.figure(2)
-    # nx.draw(P, with_labels=True, node_color='lightpink', edge_color='gray')
-    # plt.title("Subgraph P")
-    
-    # plt.show()
+        
+    except FileNotFoundError:
+        print("Error: test.txt file not found")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
     
 
 def graph_reader(graph_data):
+    """
+    Parse a text file containing graph data in a specific format
+    and convert it to NetworkX graph objects.
+    
+    Args:
+        graph_data (list): Lines from the graph data file
+        
+    Returns:
+        list: List of NetworkX graph objects
+    """
+    graphs = []
     G = nx.Graph()
     for line in graph_data:
-            if line.startswith("v"):
-                _, n, m1 = line.split()
-                G.add_node(int(n))
-                print(n)
-            elif line.startswith("e"):
-                _, u, v, m2 = line.split()
-                G.add_edge(int(u), int(v))
-    return G
+        if line.startswith("t"):
+            # 't' indicates a new graph, so add the current graph to the list
+            # and start a new one (skip the first empty graph)
+            graphs.append(G)
+            G = nx.Graph()
+        if line.startswith("v"):
+            # 'v' lines define vertices with labels: v [node_id] [label]
+            _, n, m = line.split()
+            G.add_node(int(n), label=m)
+        elif line.startswith("e"):
+            # 'e' lines define edges: e [source] [target] [label]
+            _, u, v, m2 = line.split()
+            G.add_edge(int(u), int(v))
+    return graphs[1:]  # Skip the first empty graph
 
 def test_apriori():
     graph1 = nx.Graph()
@@ -73,33 +68,6 @@ def test_apriori():
 
     singleton = nx.Graph().add_node(1)
 
-    merge23 = Apriori_Node.node_based_merge(graph2, graph3)
-    candidates23 = Apriori_Node.generate_candidates(singleton)
-    #pruned = Apriori_Node.prune(candidates23, [graph2, graph3])
-    apriori = Apriori_Node.apriori([graph1, graph2, graph3], 0.5)
-    print("Apriori Graphs:")
-    for graph in apriori:
-        print(graph.edges())
-    
-    plt.figure(1)
-    nx.draw(graph2, with_labels=True, node_color='lightblue', edge_color='gray')
-    plt.title("Graph 2")
-
-    plt.figure(2)
-    nx.draw(graph3, with_labels=True, node_color='lightpink', edge_color='gray')
-    plt.title("Graph 3")
-
-    plt.figure(3)
-    nx.draw(graph1, with_labels=True, node_color='lightyellow', edge_color='gray')
-    plt.title("Graph 1")
-
-    for graph in apriori:
-        plt.figure()
-        nx.draw(graph, with_labels=True, node_color='lightgreen', edge_color='gray')
-        plt.title("Candidate Graph")
-
-
-    plt.show()
 
 if __name__ == "__main__":
     main()

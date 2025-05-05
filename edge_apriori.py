@@ -1,5 +1,5 @@
 import networkx as nx
-from ullman_algo_edge import UllmanAlgorithmEdge
+from ullman_algo import UllmanAlgorithmEdge
 import math
 import sys
 
@@ -80,12 +80,14 @@ def edge_based_merge(G, P):
                     existing_node = u_p if u_p in mapping else v_p
                     merged_graph.add_edge(new_node, mapping[existing_node_p])
                     merged_results.append(merged_graph)
+                    print_merge_graph(G, P, merged_graph)
                 else:
       
                     #p doesnt havae unmapped node
                     if not merged_graph.has_edge(mapping[u_p], mapping[v_p]):
                         merged_graph.add_edge(mapping[u_p], mapping[v_p])
                         merged_results.append(merged_graph)
+                        print_merge_graph(G, P, merged_graph)
 
    
                     unmapped_node_g = next(iter(sorted(unmapped_g_nodes)))
@@ -93,6 +95,7 @@ def edge_based_merge(G, P):
                         merged_graph2 = nx.Graph(G)
                         merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
                         merged_results.append(merged_graph2)
+                        print_merge_graph(G, P, merged_graph)
                         return merged_results
                 return merged_results
             
@@ -278,6 +281,7 @@ def all_single_edge_graphs(graph_dataset):
             unique_edge_labels.add(pair)
 
     debug_print("unique edge label pairs:", unique_edge_labels)
+    unique_edge_labels = sorted(unique_edge_labels)
 
     for label_u, label_v in unique_edge_labels:
         G = nx.Graph()
@@ -317,6 +321,8 @@ def all_singletons(graph_dataset):
         unique_labels.update(labels)
     
     debug_print("labels found: ", unique_labels)
+
+    unique_labels = sorted(unique_labels)
     
     for label in unique_labels:
         # Create a singleton graph for each unique label
@@ -507,3 +513,52 @@ def print_graph_nodes_simple(graph_list, debug_only=True):
         print("  Edges: ", graph.edges())
 
     print("\n")
+
+def print_merge_graph(graph1, graph2, graph3):
+    """
+    Print the nodes of a single graph along with their labels.
+    
+    Args:
+        graph: A NetworkX graph object
+    """
+    nodes1 = list(graph1.nodes())
+    
+    # Get the labels for this graph
+    labels1 = nx.get_node_attributes(graph1, 'label')
+    
+    # Print nodes with their labels
+    print(f"Graph 1:")
+    for node in nodes1:
+        label = labels1.get(node, "No label")
+        print(f"Node {node}:{label} ", end="")
+    print()  # New line after each graph
+
+    print("  Edges: ", graph1.edges())
+
+    nodes2 = list(graph2.nodes())
+    
+    # Get the labels for this graph
+    labels2 = nx.get_node_attributes(graph2, 'label')
+    
+    # Print nodes with their labels
+    print(f"and Graph 2:")
+    for node in nodes2:
+        label = labels2.get(node, "No label")
+        print(f"Node {node}:{label} ", end="")
+    print()  # New line after each graph
+
+    print("  Edges: ", graph2.edges())
+
+    nodes3 = list(graph3.nodes())
+    
+    # Get the labels for this graph
+    labels3 = nx.get_node_attributes(graph3, 'label')
+    
+    # Print nodes with their labels
+    print(f"produce Graph 3:")
+    for node in nodes3:
+        label = labels3.get(node, "No label")
+        print(f"Node {node}:{label} ", end="")
+    print()  # New line after each graph
+
+    print("  Edges: ", graph3.edges())

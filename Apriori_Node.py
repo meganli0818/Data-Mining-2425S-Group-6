@@ -1,5 +1,5 @@
 import networkx as nx
-from ullman_algo.ullman_algo import UllmanAlgorithm
+from ullman_algo.ullman_algo_node import UllmanAlgorithmNode
 import math
 
 # Debug flag to control output verbosity
@@ -46,7 +46,7 @@ def node_based_merge(G, P):
     for node in P.nodes():
         P_remove_node = nx.Graph(P)
         P_remove_node.remove_node(node)
-        ullman = UllmanAlgorithm(G, P_remove_node)
+        ullman = UllmanAlgorithmNode(G, P_remove_node)
 
         # Check if the remaining "root" size k-1 graph is a subgraph of G.
         # If it is, we can merge the two graphs.
@@ -56,7 +56,7 @@ def node_based_merge(G, P):
             G_remove_node = nx.Graph(G)
             for unmapped_node in unmapped_nodes:
                 G_remove_node.remove_node(unmapped_node)  
-            exact_match = UllmanAlgorithm(G_remove_node, P_remove_node)
+            exact_match = UllmanAlgorithmNode(G_remove_node, P_remove_node)
             if exact_match.ullman(True):
                 mapping = ullman.get_mapping()
 
@@ -113,7 +113,7 @@ def generate_candidates(freq_subgraphs):
                 for new_candidate in new_candidates:
                     candidate_already_generated = False
                     for existing_candidate in candidates:
-                        ullman_exact = UllmanAlgorithm(existing_candidate, new_candidate)
+                        ullman_exact = UllmanAlgorithmNode(existing_candidate, new_candidate)
                         
                         # No need to add candidate if it is already generated.
                         if ullman_exact.ullman(True):
@@ -154,7 +154,7 @@ def all_subgraphs_frequent(candidate, freq_subgraphs):
             continue
         sub_of_candidate_frequent = False
         for subgraph in freq_subgraphs:
-            ullman = UllmanAlgorithm(subgraph, sub_of_candidate)
+            ullman = UllmanAlgorithmNode(subgraph, sub_of_candidate)
             if ullman.ullman(True):
                 sub_of_candidate_frequent = True
                 break
@@ -311,7 +311,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
             inner_counter = 1
             for graph in graph_dataset:
                 if candidate.number_of_nodes() <= graph.number_of_nodes():
-                    ullman = UllmanAlgorithm(graph, candidate)
+                    ullman = UllmanAlgorithmNode(graph, candidate)
                     print(f"\rChecked candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
                     if ullman.ullman(False):
                         if candidate not in candidate_supp:

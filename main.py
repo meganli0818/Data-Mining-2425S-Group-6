@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import time
 import copy
-from ullman_algo.ullman_algo import UllmanAlgorithm
+from ullman_algo.ullman_algo_node import UllmanAlgorithmNode
 import Apriori_Node
 
 def main():

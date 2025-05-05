@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 
-class UllmanAlgorithm:
+class UllmanAlgorithmNode:
     """
     Implementation of Ullman's Subgraph Isomorphism Algorithm.
     

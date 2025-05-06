@@ -73,13 +73,11 @@ def edge_based_merge(G, P):
                     existing_node = u_p if u_p in mapping else v_p
                     merged_graph.add_edge(new_node, mapping[existing_node_p])
                     merged_results.append(merged_graph)
-                    print_merge_graph(G, P, merged_graph)
                 else:
                     # P doesn't have a unmapped node
                     if not merged_graph.has_edge(mapping[u_p], mapping[v_p]):
                         merged_graph.add_edge(mapping[u_p], mapping[v_p])
                         merged_results.append(merged_graph)
-                        print_merge_graph(G, P, merged_graph)
 
    
                     unmapped_node_g = next(iter(sorted(unmapped_g_nodes)))
@@ -87,7 +85,6 @@ def edge_based_merge(G, P):
                         merged_graph2 = nx.Graph(G)
                         merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
                         merged_results.append(merged_graph2)
-                        print_merge_graph(G, P, merged_graph)
                         
     return merged_results
 
@@ -173,7 +170,7 @@ def generate_candidates(freq_subgraphs):
                     # Add candidate only if it is not already generated
                     if not candidate_already_generated and nx.is_connected(new_candidate):    
                         candidates.add(new_candidate)
-        print(f"\rGenerated with graph {i}/{len(freq_subgraphs_list)}...", end="")
+        print(f"\rGenerated with graph {i+1}/{len(freq_subgraphs_list)}...", end="")
 
     print()
     return candidates
@@ -320,7 +317,7 @@ def all_singletons(graph_dataset):
     return singletons
 
 
-def apriori(graph_dataset, min_freq, verbose=None):
+def apriori(graph_dataset, min_freq):
     """
     Apriori algorithm to find frequent subgraphs in a dataset of graphs.
 
@@ -341,13 +338,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
     Returns:
         list: A list of frequent subgraphs. Each subgraph is a NetworkX graph object.
     """
-    # Use provided verbosity or fall back to global setting
-    local_debug = DEBUG if verbose is None else verbose
-    
-    # Save original DEBUG value
-    original_debug = globals()['DEBUG']
-    globals()['DEBUG'] = local_debug
-    
+
     min_support = math.ceil(min_freq * len(graph_dataset))
     freq_subgraphs = []
 
@@ -358,7 +349,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
     i = 1
     for singleton in singletons:
         candidate_supp = 0
-        print(f"\rGenerating singletons {i}/{len(singletons)}...", end="")
+        print(f"\rGenerating singleton {i+1}/{len(singletons)}...", end="")
         # Count support for each singleton
         for graph in graph_dataset:
             if candidate_supp >= min_support:
@@ -377,14 +368,12 @@ def apriori(graph_dataset, min_freq, verbose=None):
         i += 1
     
     print("Number of frequent singletons: ", len(curr_freq_subgraphs))
-    print("\n")
-    debug_print("List of frequent singletons: ")
-    print_graph_nodes_simple(curr_freq_subgraphs)
+    print("\n\n")
 
     i=1
     single_edge_graphs = all_single_edge_graphs(graph_dataset, frequent_labels)
     for single_edge_graph in single_edge_graphs:
-        print(f"\rGenerating singletons {i}/{len(single_edge_graphs)}...", end="")
+        print(f"\rGenerating single edge graph {i+1}/{len(single_edge_graphs)}...", end="")
         i += 1
         # Count support for each singleton
         candidate_supp = {}
@@ -399,40 +388,44 @@ def apriori(graph_dataset, min_freq, verbose=None):
                     if candidate_supp[single_edge_graph] >= min_support:
                         curr_freq_subgraphs.append(single_edge_graph)
                         break
-    
-    debug_print("Number of frequent single-edge graphs: ", len(curr_freq_subgraphs))
-    debug_print("List of frequent single edge graphs: ")
-    print_graph_nodes_simple(curr_freq_subgraphs)
+
 
     # Apriori algorithm
+    i = 2
     while curr_freq_subgraphs and len(curr_freq_subgraphs) > 0:
+        header = f" SIZE {i} "
+        decoration = "=" * len(header)
         
+        print("\n")
+        print(decoration)
+        print(header)
+        print(decoration)
+        print()
         # Generate candidates of size k+1 from current frequent subgraphs of size k
         freq_subgraphs.extend(curr_freq_subgraphs)
         unpruned_candidates = generate_candidates(curr_freq_subgraphs)
-        print("Generated candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
-        debug_print("Generated candidates: ")
-        print_graph_nodes_simple(unpruned_candidates)
+        print("\nFinished generating candidates of size", i)
+        print("Number of unpruned candidates: ", len(unpruned_candidates))
 
         # Prune candidates
         candidates = prune(unpruned_candidates, curr_freq_subgraphs)
-        print("Pruned candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
-        print("Number of candidates: ", len(candidates))
+        print("\nFinished pruning candidates of size", i)
+        print("Number of pruned candidates: ", len(candidates))
+        print()
 
-        
-        print(f"Size of K : {curr_freq_subgraphs[0].number_of_edges() + 1}")
-        print(f"Size of curr_freq_subgraph : {len(curr_freq_subgraphs)}")
+    
 
 
         # Count support for each candidate
         candidate_supp = {}
+        curr_freq_subgraphs = []
         counter = 1
         for candidate in candidates:
             inner_counter = 1
             for graph in graph_dataset:
                 if candidate.number_of_edges() <= graph.number_of_edges():
                     ullman = UllmanAlgorithmEdge(graph, candidate)
-                    print(f"\rChecked candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
+                    print(f"\rChecking candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
                     if ullman.ullman(False):
                         if candidate not in candidate_supp:
                             candidate_supp[candidate] = 1
@@ -444,107 +437,10 @@ def apriori(graph_dataset, min_freq, verbose=None):
                 inner_counter += 1
             counter += 1
         
-        print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        debug_print("Number of potential candidates: ", len(candidate_supp))
-        
-        # Save candidates based on minimum support for the next round
-        curr_freq_subgraphs = []
-        for candidate, supp in candidate_supp.items():
-            if supp >= min_support:
-                curr_freq_subgraphs.append(candidate)
-        
-        print("Number of candidates: ", len(curr_freq_subgraphs))
-        print()
-  
-    print_graph_nodes_simple(freq_subgraphs)
+        print("\nFinished calculating support of size", i+1)
+        print(f"Number of frequent subgraphs of size {i+1}: ", len(curr_freq_subgraphs))
+        print("\n\n")
+        i += 1
     
-    
-    # Restore original DEBUG value
-    globals()['DEBUG'] = original_debug
+
     return freq_subgraphs
-
-
-
-def print_graph_nodes_simple(graph_list, debug_only=True):
-    """
-    Print the nodes of each graph along with their labels.
-    
-    Args:
-        graph_list: List of NetworkX graph objects
-        debug_only: If True, only print when DEBUG is True
-    """
-    if debug_only and not DEBUG:
-        return
-        
-    all_nodes = []
-    
-    print("\nGraph nodes and labels:")
-    for i, graph in enumerate(graph_list):
-        nodes = list(graph.nodes())
-        all_nodes.append(nodes)
-        
-        # Get the labels for this graph
-        labels = nx.get_node_attributes(graph, 'label')
-        
-        # Print nodes with their labels
-        print(f"Graph {i}: {nodes}")
-        print(f"  Labels: ", end="")
-        for node in nodes:
-            label = labels.get(node, "No label")
-            print(f"Node {node}:{label} ", end="")
-        print()  # New line after each graph
-
-        print("  Edges: ", graph.edges())
-
-    print("\n")
-
-def print_merge_graph(graph1, graph2, graph3):
-    if debug_print:
-        return 
-    """
-    Print the nodes of a single graph along with their labels.
-    
-    Args:
-        graph: A NetworkX graph object
-    """
-    nodes1 = list(graph1.nodes())
-    
-    # Get the labels for this graph
-    labels1 = nx.get_node_attributes(graph1, 'label')
-    
-    # Print nodes with their labels
-    print(f"Graph 1:")
-    for node in nodes1:
-        label = labels1.get(node, "No label")
-        print(f"Node {node}:{label} ", end="")
-    print()  # New line after each graph
-
-    print("  Edges: ", graph1.edges())
-
-    nodes2 = list(graph2.nodes())
-    
-    # Get the labels for this graph
-    labels2 = nx.get_node_attributes(graph2, 'label')
-    
-    # Print nodes with their labels
-    print(f"and Graph 2:")
-    for node in nodes2:
-        label = labels2.get(node, "No label")
-        print(f"Node {node}:{label} ", end="")
-    print()  # New line after each graph
-
-    print("  Edges: ", graph2.edges())
-
-    nodes3 = list(graph3.nodes())
-    
-    # Get the labels for this graph
-    labels3 = nx.get_node_attributes(graph3, 'label')
-    
-    # Print nodes with their labels
-    print(f"produce Graph 3:")
-    for node in nodes3:
-        label = labels3.get(node, "No label")
-        print(f"Node {node}:{label} ", end="")
-    print()  # New line after each graph
-
-    print("  Edges: ", graph3.edges())

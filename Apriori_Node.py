@@ -124,7 +124,7 @@ def generate_candidates(freq_subgraphs):
                     if not candidate_already_generated and nx.is_connected(new_candidate):    
                         candidates.add(new_candidate)
                         #debug_print("candidate found")
-        print(f"\rGenerated with graph: {i}/{len(freq_subgraphs_list)}...", end="")
+        print(f"\rGenerated with graph: {i+1}/{len(freq_subgraphs_list)}...", end="")
 
     print()
     return candidates
@@ -285,23 +285,32 @@ def apriori(graph_dataset, min_freq, verbose=None):
         i += 1
     
     print("Number of frequent singletons: ", len(curr_freq_subgraphs))
-    print("\n")
+    print("\n\n")
     debug_print("List of frequent singletons: ")
     print_graph_nodes_simple(curr_freq_subgraphs)
 
     # Apriori algorithm
+    i = 2
     while curr_freq_subgraphs and len(curr_freq_subgraphs) > 0:
+        header = f" SIZE {i} "
+        decoration = "=" * len(header)
         
+        print("\n")
+        print(decoration)
+        print(header)
+        print(decoration)
+        print()
         # Generate candidates of size k+1 from current frequent subgraphs of size k
         freq_subgraphs.extend(curr_freq_subgraphs)
         unpruned_candidates = generate_candidates(curr_freq_subgraphs)
-        print("Generated candidates of size: ", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        print("Generated candidates: ", len(unpruned_candidates))
-        print_graph_nodes_simple(unpruned_candidates, debug_only=False)
+        print("\nFinished generating candidates of size", i)
+        print("Number of unpruned candidates: ", len(unpruned_candidates))
 
         # Prune candidates
         candidates = prune(unpruned_candidates, curr_freq_subgraphs)
-        print("Pruned candidates:", len(candidates))
+        print("\nFinished pruning candidates of size", i)
+        print("Number of pruned candidates: ", len(candidates))
+        print()
 
         # Count support for each candidate
         candidate_supp = {}
@@ -312,7 +321,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
             for graph in graph_dataset:
                 if candidate.number_of_nodes() <= graph.number_of_nodes():
                     ullman = UllmanAlgorithmNode(graph, candidate)
-                    print(f"\rChecked candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
+                    print(f"\rChecking candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
                     if ullman.ullman(False):
                         if candidate not in candidate_supp:
                             candidate_supp[candidate] = 1
@@ -324,13 +333,11 @@ def apriori(graph_dataset, min_freq, verbose=None):
                 inner_counter += 1
             counter += 1
         
-        #print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        debug_print("Number of potential candidates: ", len(candidate_supp))
+        print("\nFinished calculating support of size", i)
+        print(f"Number of frequent subgraphs of size {i}: ", len(curr_freq_subgraphs))
+        print("\n\n")
+        i += 1
 
-        print("Number of candidates: ", len(curr_freq_subgraphs))
-        print()
-
-    print_graph_nodes_simple(freq_subgraphs, debug_only=False)
     
     
     # Restore original DEBUG value

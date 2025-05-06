@@ -17,7 +17,8 @@ class UllmanAlgorithmEdge:
         p_node_to_index, g_node_to_index: Mappings from node IDs to matrix indices
         p_index_to_node, g_index_to_node: Mappings from matrix indices to node IDs
         adj_list_G, adj_list_P: Adjacency lists for graphs G and P
-        visited: Dictionary tracking the current mapping from P to G
+        visited_nodes: Dictionary tracking the current mapping of nodes from P to G
+        visited_edges: Dictionary tracking the current mapping of edges from P to G
     """
     
     def __init__(self, G, P):
@@ -130,10 +131,10 @@ class UllmanAlgorithmEdge:
     
     def get_unmapped_vertices_in_P(self):
         """
-        Get vertices in G that were not mapped to any vertex in P.
+        Get vertices in P that were not mapped to any vertex in G.
         
         Returns:
-            set: Vertices in G not included in the mapping
+            set: Vertices in P not included in the mapping
         """
         return set(self.P_vertices) - set(self.visited_nodes.keys())
 

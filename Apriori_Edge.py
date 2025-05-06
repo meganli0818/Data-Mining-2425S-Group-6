@@ -38,7 +38,7 @@ def edge_based_merge(G, P):
     merged_results = []
 
     # Loop through all edges in P, removing one at a time.
-    for u_p, v_p in sorted(P.edges()):
+    for u_p, v_p in (P.edges()):
         P_rem = nx.Graph(P)
         P_rem.remove_edge(u_p,v_p)
         iso = UllmanAlgorithmEdge(G, P_rem)
@@ -49,13 +49,13 @@ def edge_based_merge(G, P):
         if iso.ullman(False):
             unmapped_edges_g = iso.get_unmapped_edges_in_G()
             G_rem = nx.Graph(G)
-            for unmapped_edge_g in sorted(unmapped_edges_g):
+            for unmapped_edge_g in (unmapped_edges_g):
                 G_rem.remove_edge(*unmapped_edge_g)
 
             exact_match = UllmanAlgorithmEdge(G_rem, P_rem)
           
             if exact_match.ullman(True):
-                unmapped_g_nodes = sorted(iso.get_unmapped_vertices_in_G())
+                unmapped_g_nodes = (iso.get_unmapped_vertices_in_G())
             
                 mapping = iso.get_mapping()
                 

@@ -124,7 +124,7 @@ def generate_candidates(freq_subgraphs):
                     if not candidate_already_generated and nx.is_connected(new_candidate):    
                         candidates.add(new_candidate)
                         #debug_print("candidate found")
-        print(f"\rGenerated with graph {i}/{len(freq_subgraphs_list)}...", end="")
+        print(f"\rGenerated with graph: {i}/{len(freq_subgraphs_list)}...", end="")
 
     print()
     return candidates
@@ -216,7 +216,7 @@ def all_singletons(graph_dataset):
         # Add them to the set of unique labels
         unique_labels.update(labels)
     
-    debug_print("labels found: ", unique_labels)
+    debug_print("Labels found: ", unique_labels)
     
     for label in unique_labels:
         # Create a singleton graph for each unique label
@@ -267,7 +267,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
     
     for singleton in singletons:
         candidate_supp = 0
-        print(f"\rGenerating singletons {i}/{len(singletons)}...", end="")
+        print(f"\rGenerating singletons: {i}/{len(singletons)}...", end="")
         # Count support for each singleton
         for graph in graph_dataset:
             if candidate_supp >= min_support:
@@ -284,9 +284,9 @@ def apriori(graph_dataset, min_freq, verbose=None):
 
         i += 1
     
-    print("number of frequent singletons: ", len(curr_freq_subgraphs))
+    print("Number of frequent singletons: ", len(curr_freq_subgraphs))
     print("\n")
-    debug_print("frequent singletons ")
+    debug_print("List of frequent singletons: ")
     print_graph_nodes_simple(curr_freq_subgraphs)
 
     # Apriori algorithm
@@ -295,13 +295,13 @@ def apriori(graph_dataset, min_freq, verbose=None):
         # Generate candidates of size k+1 from current frequent subgraphs of size k
         freq_subgraphs.extend(curr_freq_subgraphs)
         unpruned_candidates = generate_candidates(curr_freq_subgraphs)
-        print("generated candidates of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        print("generated candidates: ", len(unpruned_candidates))
+        print("Generated candidates of size: ", curr_freq_subgraphs[0].number_of_nodes() + 1)
+        print("Generated candidates: ", len(unpruned_candidates))
         print_graph_nodes_simple(unpruned_candidates, debug_only=False)
 
         # Prune candidates
         candidates = prune(unpruned_candidates, curr_freq_subgraphs)
-        print("pruned candidates:", len(candidates))
+        print("Pruned candidates:", len(candidates))
 
         # Count support for each candidate
         candidate_supp = {}
@@ -325,9 +325,9 @@ def apriori(graph_dataset, min_freq, verbose=None):
             counter += 1
         
         #print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        debug_print("number of potential candidates: ", len(candidate_supp))
+        debug_print("Number of potential candidates: ", len(candidate_supp))
 
-        print("number of candidates: ", len(curr_freq_subgraphs))
+        print("Number of candidates: ", len(curr_freq_subgraphs))
         print()
 
     print_graph_nodes_simple(freq_subgraphs, debug_only=False)

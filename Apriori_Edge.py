@@ -68,7 +68,6 @@ def edge_based_merge(G, P):
                 merged_graph = nx.Graph(G)
             
                 if (node not in mapping for node in (u_p, v_p)):
-
                     if (u_p in mapping):
                         existing_node_p = u_p
                         unmapped_node_p = v_p
@@ -96,9 +95,8 @@ def edge_based_merge(G, P):
                         merged_graph2.add_edge(unmapped_node_g, mapping[existing_node])
                         merged_results.append(merged_graph2)
                         print_merge_graph(G, P, merged_graph)
-                        return merged_results
-                return merged_results
-            
+                        
+                
 
     return merged_results
 
@@ -123,24 +121,23 @@ def k1_join(G, P):
     shared_labels = sorted(set((labels_G.values())) & set((labels_P.values()))) # Get intersection of node with the same labels
     if len(shared_labels) < 1:
         return merged_results
-    label = shared_labels.pop()
+    for label in shared_labels:
+        # Get the shared vertex
+        g_join = next(n for n, l in labels_G.items() if l == label)
+        p_join = next(n for n, l in labels_P.items() if l == label)
 
-    # Get the shared vertex
-    g_join = next(n for n, l in labels_G.items() if l == label)
-    p_join = next(n for n, l in labels_P.items() if l == label)
+        # Get the neighbor of the shared vertex
+        p_neighbor = next(n for n in P.neighbors(p_join))
 
-    # Get the neighbor of the shared vertex
-    p_neighbor = next(n for n in P.neighbors(p_join))
+        new_node = max(G.nodes()) + 1 # just pick an ID that doesn't cause collision with other IDs
 
-    new_node = max(G.nodes()) + 1 # just pick an ID that doesn't cause collision with other IDs
-
-    # Create k=1 candidate by adding P's node (shared label)'s neighbor with G's node (shared label)
-    cand = nx.Graph()
-    cand.add_nodes_from(G.nodes(data=True))
-    cand.add_edges_from(G.edges())
-    cand.add_node(new_node, label=labels_P[p_neighbor])
-    cand.add_edge(g_join, new_node)
-    merged_results.append(cand)
+        # Create k=1 candidate by adding P's node (shared label)'s neighbor with G's node (shared label)
+        cand = nx.Graph()
+        cand.add_nodes_from(G.nodes(data=True))
+        cand.add_edges_from(G.edges())
+        cand.add_node(new_node, label=labels_P[p_neighbor])
+        cand.add_edge(g_join, new_node)
+        merged_results.append(cand)
     return merged_results
 
 

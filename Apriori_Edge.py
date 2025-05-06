@@ -1,7 +1,6 @@
 import networkx as nx
 from ullman_algo.ullman_algo_edge import UllmanAlgorithmEdge
 import math
-import sys
 
 # Debug flag to control output verbosity
 DEBUG = False  # Set to False for production mode
@@ -57,11 +56,6 @@ def edge_based_merge(G, P):
           
             if exact_match.ullman(True):
                 unmapped_g_nodes = sorted(iso.get_unmapped_vertices_in_G())
-                # print(f"GRAPHS TO COMBINE FOR SIZE :  {G.number_of_edges()}")
-                # list = [P, G]
-                # print_graph_nodes_simple(list)
-
-
             
                 mapping = iso.get_mapping()
                 
@@ -81,8 +75,7 @@ def edge_based_merge(G, P):
                     merged_results.append(merged_graph)
                     print_merge_graph(G, P, merged_graph)
                 else:
-      
-                    #p doesnt havae unmapped node
+                    # P doesn't have a unmapped node
                     if not merged_graph.has_edge(mapping[u_p], mapping[v_p]):
                         merged_graph.add_edge(mapping[u_p], mapping[v_p])
                         merged_results.append(merged_graph)
@@ -96,8 +89,6 @@ def edge_based_merge(G, P):
                         merged_results.append(merged_graph2)
                         print_merge_graph(G, P, merged_graph)
                         
-                
-
     return merged_results
 
 
@@ -170,10 +161,6 @@ def generate_candidates(freq_subgraphs):
             if new_candidates is not None:
                 # Check if each candidate is already generated.
                 for new_candidate in new_candidates:
-                    if new_candidate.number_of_edges() <= freq_subgraphs_list[i].number_of_edges() or new_candidate.number_of_edges() <= freq_subgraphs_list[j].number_of_edges():
-                        print_graph_nodes_simple([new_candidate, freq_subgraphs_list[i], freq_subgraphs_list[j]])
-                        print("ERROR")
-                        sys.exit(1)
                     candidate_already_generated = False
                     for existing_candidate in candidates:
                         ullman_exact = UllmanAlgorithmEdge(existing_candidate, new_candidate)
@@ -183,10 +170,9 @@ def generate_candidates(freq_subgraphs):
                             candidate_already_generated = True
                             break
 
-                    #  Add candidate only if it is not already generated
+                    # Add candidate only if it is not already generated
                     if not candidate_already_generated and nx.is_connected(new_candidate):    
                         candidates.add(new_candidate)
-                        #debug_print("candidate found")
         print(f"\rGenerated with graph {i}/{len(freq_subgraphs_list)}...", end="")
 
     print()
@@ -269,7 +255,7 @@ def all_single_edge_graphs(graph_dataset, frequent_singletons):
 
     for graph in graph_dataset:
         for u, v in graph.edges():
-            # sort labels to avoid duplicates (A,B) vs (B,A)
+            # Sort labels to avoid duplicates (A,B) vs (B,A)
             label_u = graph.nodes[u].get('label')
             label_v = graph.nodes[v].get('label')
             if label_u is None or label_v is None:
@@ -279,7 +265,7 @@ def all_single_edge_graphs(graph_dataset, frequent_singletons):
             pair = tuple(sorted((label_u, label_v)))
             unique_edge_labels.add(pair)
 
-    debug_print("unique edge label pairs:", unique_edge_labels)
+    debug_print("Unique edge label pairs:", unique_edge_labels)
     unique_edge_labels = sorted(unique_edge_labels)
 
     for label_u, label_v in unique_edge_labels:
@@ -390,9 +376,9 @@ def apriori(graph_dataset, min_freq, verbose=None):
 
         i += 1
     
-    print("number of frequent singletons: ", len(curr_freq_subgraphs))
+    print("Number of frequent singletons: ", len(curr_freq_subgraphs))
     print("\n")
-    debug_print("frequent singletons ")
+    debug_print("List of frequent singletons: ")
     print_graph_nodes_simple(curr_freq_subgraphs)
 
     i=1
@@ -414,8 +400,8 @@ def apriori(graph_dataset, min_freq, verbose=None):
                         curr_freq_subgraphs.append(single_edge_graph)
                         break
     
-    debug_print("number of frequent single-edge graphs: ", len(curr_freq_subgraphs))
-    debug_print("frequent single edge graphs ")
+    debug_print("Number of frequent single-edge graphs: ", len(curr_freq_subgraphs))
+    debug_print("List of frequent single edge graphs: ")
     print_graph_nodes_simple(curr_freq_subgraphs)
 
     # Apriori algorithm
@@ -424,18 +410,18 @@ def apriori(graph_dataset, min_freq, verbose=None):
         # Generate candidates of size k+1 from current frequent subgraphs of size k
         freq_subgraphs.extend(curr_freq_subgraphs)
         unpruned_candidates = generate_candidates(curr_freq_subgraphs)
-        print("generated candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
-        debug_print("generated candidates: ")
+        print("Generated candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
+        debug_print("Generated candidates: ")
         print_graph_nodes_simple(unpruned_candidates)
 
         # Prune candidates
         candidates = prune(unpruned_candidates, curr_freq_subgraphs)
-        print("pruned candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
-        print("number of candidates: ", len(candidates))
+        print("Pruned candidates of size:", curr_freq_subgraphs[0].number_of_edges() + 1)
+        print("Number of candidates: ", len(candidates))
 
         
-        print(f"size of K : {curr_freq_subgraphs[0].number_of_edges() + 1}")
-        print(f"size of curr_freq_subgraph : {len(curr_freq_subgraphs)}")
+        print(f"Size of K : {curr_freq_subgraphs[0].number_of_edges() + 1}")
+        print(f"Size of curr_freq_subgraph : {len(curr_freq_subgraphs)}")
 
 
         # Count support for each candidate
@@ -444,13 +430,6 @@ def apriori(graph_dataset, min_freq, verbose=None):
         for candidate in candidates:
             inner_counter = 1
             for graph in graph_dataset:
-                if(curr_freq_subgraphs[0].number_of_edges() >= candidate.number_of_edges()):
-                    print("ERROR! candidate has less edges than before")
-                    print("candidate: ")
-                    print_graph_nodes_simple([candidate])
-                    print("old graph")
-                    print_graph_nodes_simple([curr_freq_subgraphs[0]])
-                    sys.exit(1)
                 if candidate.number_of_edges() <= graph.number_of_edges():
                     ullman = UllmanAlgorithmEdge(graph, candidate)
                     print(f"\rChecked candidate {counter}/{len(candidates)} with graph {inner_counter}/{len(graph_dataset)}    ", end="")
@@ -466,7 +445,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
             counter += 1
         
         print("\nCalculated support of size:", curr_freq_subgraphs[0].number_of_nodes() + 1)
-        debug_print("number of potential candidates: ", len(candidate_supp))
+        debug_print("Number of potential candidates: ", len(candidate_supp))
         
         # Save candidates based on minimum support for the next round
         curr_freq_subgraphs = []
@@ -474,7 +453,7 @@ def apriori(graph_dataset, min_freq, verbose=None):
             if supp >= min_support:
                 curr_freq_subgraphs.append(candidate)
         
-        print("number of candidates: ", len(curr_freq_subgraphs))
+        print("Number of candidates: ", len(curr_freq_subgraphs))
         print()
   
     print_graph_nodes_simple(freq_subgraphs)

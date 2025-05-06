@@ -3,16 +3,17 @@
 
 Welcome to Group 6's project for Data Mining 2425S! This repository contains our implementation of **Frequent Subgraph Mining (FSM)** algorithms, including:
 
-- **Ullman's Subgraph Isomorphism Algorithm** (vertex-based)
+- **Ullman's Subgraph Isomorphism Algorithm** (Node-based and Edge-based)
 - **Apriori by Node**
-- (In progress) **Apriori by Edge** – see the `Apriori_Edge` branch
+- **Apriori by Edge**
 
 ---
 
 ## Project Structure
 
 - `ullman_algo/` – contains our implementation of Ullman's algorithm  
-- `Apriori_Node.py` – our implementation of the Apriori (by node) FSM algorithm  
+- `Apriori_Node.py` – our implementation of the Apriori (by node) FSM algorithm
+- `Apriori_Edge.py` – our implementation of the Apriori (by edge) FSM algorithm
 - `main.py` – entry point for running FSM on your dataset
 
 ---

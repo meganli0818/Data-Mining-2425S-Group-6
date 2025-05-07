@@ -15,6 +15,7 @@ Welcome to Group 6's project for Data Mining 2425S! This repository contains our
 - `Apriori_Node.py` – our implementation of the Apriori (by node) FSM algorithm
 - `Apriori_Edge.py` – our implementation of the Apriori (by edge) FSM algorithm
 - `main.py` – entry point for running FSM on your dataset
+- `testing material/` – contains code used for testing the algorithms. Feel free to take a look, but nothing important is in there.
 
 ---
 

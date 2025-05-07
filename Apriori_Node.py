@@ -123,7 +123,6 @@ def generate_candidates(freq_subgraphs):
                     #  Add candidate only if it is not already generated
                     if not candidate_already_generated and nx.is_connected(new_candidate):    
                         candidates.add(new_candidate)
-                        #debug_print("candidate found")
         print(f"\rGenerated with graph: {i+1}/{len(freq_subgraphs_list)}...", end="")
 
     print()
@@ -216,8 +215,6 @@ def all_singletons(graph_dataset):
         # Add them to the set of unique labels
         unique_labels.update(labels)
     
-    debug_print("Labels found: ", unique_labels)
-    
     for label in unique_labels:
         # Create a singleton graph for each unique label
         singleton_graph = nx.Graph()
@@ -286,8 +283,6 @@ def apriori(graph_dataset, min_freq, verbose=None):
     
     print("Number of frequent singletons: ", len(curr_freq_subgraphs))
     print("\n\n")
-    debug_print("List of frequent singletons: ")
-    print_graph_nodes_simple(curr_freq_subgraphs)
 
     # Apriori algorithm
     i = 2

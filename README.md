@@ -11,7 +11,7 @@ Welcome to Group 6's project for Data Mining 2425S! This repository contains our
 
 ## Project Structure
 
-- `ullman_algo/` – contains our implementation of Ullman's algorithm  
+- `ullman_algo/` – contains both our Node-based and Edge-based implementations of Ullman's algorithm  
 - `Apriori_Node.py` – our implementation of the Apriori (by node) FSM algorithm
 - `Apriori_Edge.py` – our implementation of the Apriori (by edge) FSM algorithm
 - `main.py` – entry point for running FSM on your dataset
@@ -21,18 +21,17 @@ Welcome to Group 6's project for Data Mining 2425S! This repository contains our
 ## How to Run
 
 1. Add your dataset file (in **Graph Transaction Format** (see below) ) to the main directory.
-2. Open `main.py` and change **line 15** to point to your dataset's filename.
-3. Run the program:
+2. Run the program with the following usage:
 
    ```bash
-   python main.py
+   python main.py <dataset_file> <algorithm: edge or node> <support_threshold>
    ```
 
 ---
 
 ## Graph Transaction Format Example
 
-In the following example, numbers represent vertex numbers and letters represent labels.
+In the following example, numbers represent vertex numbers and letters represent labels. Vertices must have labels, but edges can be unlabeled. Each graph in the dataset is separated by a line starting with `t #`, and each vertex is represented by `v <vertex_number> <label>`. Edges are represented by `e <source_vertex> <target_vertex> <label>`.
 
 ```
 t # 0

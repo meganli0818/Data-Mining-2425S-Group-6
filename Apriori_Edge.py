@@ -262,7 +262,6 @@ def all_single_edge_graphs(graph_dataset, frequent_singletons):
             pair = tuple(sorted((label_u, label_v)))
             unique_edge_labels.add(pair)
 
-    debug_print("Unique edge label pairs:", unique_edge_labels)
     unique_edge_labels = sorted(unique_edge_labels)
 
     for label_u, label_v in unique_edge_labels:
@@ -302,7 +301,6 @@ def all_singletons(graph_dataset):
         # Add them to the set of unique labels
         unique_labels.update(labels)
     
-    debug_print("labels found: ", unique_labels)
 
     unique_labels = sorted(unique_labels)
     
